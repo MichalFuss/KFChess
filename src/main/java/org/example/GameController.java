@@ -41,10 +41,32 @@ public class GameController {
             // Clicked another friendly piece -> change selection
             selectedPosition = clickedPos;
         } else {
-            // Clicked an empty square or an enemy piece -> move request
-            board.movePiece(selectedPosition, clickedPos);
-            selectedPosition = null; // Clear selection after a move
+            // Clicked an empty square or an enemy piece -> validate and move request
+            if (isValidMove(selectedPosition, clickedPos, selectedPiece)) {
+                board.movePiece(selectedPosition, clickedPos);
+            }
+            selectedPosition = null; // Clear selection after a move attempt (legal or illegal)
         }
+    }
+
+    // Comprehensive helper to validate if a move complies with all chess mechanics for Iteration 3
+    private boolean isValidMove(Position from, Position to, Piece piece) {
+        int deltaRow = to.getRow() - from.getRow();
+        int deltaCol = to.getCol() - from.getCol();
+
+        // 1. Check if the piece's pattern allows this jump geometry
+        if (!piece.getType().isValidMoveShape(deltaRow, deltaCol)) {
+            return false;
+        }
+
+        // 2. Except for Knights, verify that the path to the target square is clear of obstructions
+        if (piece.getType() != Piece.Type.KNIGHT) {
+            if (!board.isPathClear(from, to)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     // Advance the game clock

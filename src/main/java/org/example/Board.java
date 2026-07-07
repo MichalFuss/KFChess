@@ -75,4 +75,34 @@ public class Board {
         grid[to.getRow()][to.getCol()] = pieceToMove;
         grid[from.getRow()][from.getCol()] = null; // Clear old square
     }
+
+    // Checks if all squares strictly between 'from' and 'to' are empty
+    public boolean isPathClear(Position from, Position to) {
+        int startRow = from.getRow();
+        int startCol = from.getCol();
+        int endRow = to.getRow();
+        int endCol = to.getCol();
+
+        int deltaRow = endRow - startRow;
+        int deltaCol = endCol - startCol;
+
+        // Determine step direction (-1, 0, or 1)
+        int stepRow = Integer.compare(deltaRow, 0);
+        int stepCol = Integer.compare(deltaCol, 0);
+
+        int currentRow = startRow + stepRow;
+        int currentCol = startCol + stepCol;
+
+        // Loop until reaching the target position
+        while (currentRow != endRow || currentCol != endCol) {
+            if (grid[currentRow][currentCol] != null) {
+                return false; // Found an obstacle
+            }
+            currentRow += stepRow;
+            currentCol += stepCol;
+        }
+
+        return true;
+    }
+
 }
