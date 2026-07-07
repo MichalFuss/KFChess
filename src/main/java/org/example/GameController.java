@@ -51,6 +51,13 @@ public class GameController {
 
     // Comprehensive helper to validate if a move complies with all chess mechanics for Iteration 3
     private boolean isValidMove(Position from, Position to, Piece piece) {
+
+        // Route pawn movement validation to the specific class
+        if (piece.getType() == Piece.Type.PAWN) {
+            return PawnMoveValidator.isValidPawnMove(from, to, piece, board);
+        }
+
+        // Existing logic for all other pieces
         int deltaRow = to.getRow() - from.getRow();
         int deltaCol = to.getCol() - from.getCol();
 
