@@ -81,6 +81,18 @@ public class Main {
                 }
             }
         }
+        else if (lowerCommand.startsWith("jump ")) {
+            String[] tokens = commandLine.split("\\s+");
+            if (tokens.length == 3) {
+                try {
+                    int x = Integer.parseInt(tokens[1]);
+                    int y = Integer.parseInt(tokens[2]);
+                    gameController.handleJump(x, y);
+                } catch (NumberFormatException e) {
+                    // Soft ignore
+                }
+            }
+        }
         else if (lowerCommand.startsWith("wait ")) {
             // Split by spaces, expected format: wait <ms>
             String[] tokens = commandLine.split("\\s+");
