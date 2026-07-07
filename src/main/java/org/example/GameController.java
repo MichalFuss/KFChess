@@ -1,14 +1,25 @@
 package org.example;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 public class GameController {
     private final Board board;
     private Position selectedPosition;
     private long gameTimeMillis;
 
+    // List to manage all pieces currently moving in real-time
+    private final List<ActiveMove> activeMoves;
+
+    // Constant for Iteration 6: every move takes exactly 1000ms
+    private static final long MOVE_DURATION_PER_SQUARE = 1000;
+
     public GameController(Board board) {
         this.board = board;
         this.selectedPosition = null; // No piece selected at start
         this.gameTimeMillis = 0;      // Game clock starts at 0
+        this.activeMoves = new ArrayList<>();
     }
 
     // Process a click event at pixel coordinates (x, y)
@@ -29,7 +40,10 @@ public class GameController {
         // Case 1: No piece is currently selected
         if (selectedPosition == null) {
             if (clickedPiece != null) {
-                selectedPosition = clickedPos; // Select the piece
+                // Only select the piece if it is not already mid-move
+                if (!isPieceMovingFrom(clickedPos)) {
+                    selectedPosition = clickedPos; // Select the piece
+                }
             }
             return;
         }
@@ -38,15 +52,42 @@ public class GameController {
         Piece selectedPiece = board.getPiece(selectedPosition);
 
         if (clickedPiece != null && clickedPiece.getColor() == selectedPiece.getColor()) {
-            // Clicked another friendly piece -> change selection
-            selectedPosition = clickedPos;
+            // Clicked another friendly piece -> change selection (if it's not moving)
+            if (!isPieceMovingFrom(clickedPos)) {
+                selectedPosition = clickedPos;
+            }
         } else {
             // Clicked an empty square or an enemy piece -> validate and move request
             if (isValidMove(selectedPosition, clickedPos, selectedPiece)) {
-                board.movePiece(selectedPosition, clickedPos);
+                // 1. Calculate how many squares the piece is traveling
+                int distance = calculateDistance(selectedPosition, clickedPos);
+
+                // 2. Calculate dynamic travel time (1000ms per square)
+                long totalTravelTime = distance * MOVE_DURATION_PER_SQUARE;
+                long arrivalTime = this.gameTimeMillis + totalTravelTime;
+
+                // Register the active move instead of moving instantly
+                activeMoves.add(new ActiveMove(selectedPosition, clickedPos, selectedPiece, arrivalTime));
             }
-            selectedPosition = null; // Clear selection after a move attempt (legal or illegal)
+            selectedPosition = null; // Clear selection after a move attempt
         }
+    }
+
+    // Helper to calculate the move distance in squares (Chebyshev distance)
+    private int calculateDistance(Position from, Position to) {
+        int deltaRow = Math.abs(to.getRow() - from.getRow());
+        int deltaCol = Math.abs(to.getCol() - from.getCol());
+        return Math.max(deltaRow, deltaCol);
+    }
+
+    // Helper to check if a piece on a specific position is already in transit
+    private boolean isPieceMovingFrom(Position pos) {
+        for (ActiveMove move : activeMoves) {
+            if (move.getFrom().equals(pos)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // Comprehensive helper to validate if a move complies with all chess mechanics for Iteration 3
@@ -86,6 +127,19 @@ public class GameController {
     public void advanceTime(long millis) {
         if (millis > 0) {
             this.gameTimeMillis += millis;
+        }
+
+        // Use Iterator to safely remove items from the list while iterating
+        Iterator<ActiveMove> iterator = activeMoves.iterator();
+        while (iterator.hasNext()) {
+            ActiveMove move = iterator.next();
+
+            // Check if the game clock has reached or passed the arrival time
+            if (move.isComplete(this.gameTimeMillis)) {
+                // Execute the physical move on the board grid
+                board.movePiece(move.getFrom(), move.getTo());
+                iterator.remove(); // Move is finished, remove from active list
+            }
         }
     }
 
