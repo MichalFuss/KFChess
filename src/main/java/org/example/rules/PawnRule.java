@@ -24,16 +24,16 @@ public class PawnRule implements PieceRule {
 
             // צעד כפול קדימה
             if (deltaRow == 2 * direction) {
-                // גמישות מקסימלית לשורות התחלה כדי לכסות את כל סוגי הלוחות (8x8, 4x4, 4x3) ומיקומי הקליקים בטסטים
                 boolean isStartingRow = false;
                 int r = from.getRow();
 
+                // --- התיקון הארכיטקטורי הדינמי ---
                 if (piece.getColor() == Piece.Color.WHITE) {
-                    // לבן יכול להתחיל בשורה הלפני אחרונה, האחרונה, או שורות 2, 3, 6
-                    isStartingRow = (r == board.getHeight() - 1) || (r == board.getHeight() - 2) || (r == 6) || (r == 3) || (r == 2);
+                    // לבן תמיד מתחיל בשורה השנייה מלמטה
+                    isStartingRow = (r == board.getHeight() - 2);
                 } else {
-                    // שחור יכול להתחיל בשורה הראשונה, השנייה או השלישית
-                    isStartingRow = (r == 0) || (r == 1) || (r == 2);
+                    // שחור תמיד מתחיל בשורה השנייה מלמעלה
+                    isStartingRow = (r == 1);
                 }
 
                 if (isStartingRow) {

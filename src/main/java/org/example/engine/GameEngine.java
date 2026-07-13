@@ -76,7 +76,7 @@ public class GameEngine {
         }
 
         // 3. קריאה ל-RuleEngine עם כל הפרמטרים שהוא דורש
-        if (ruleEngine.validateMove(from, to, piece, gameState.getBoard(), gameState.getActiveMoves())) {
+        if (this.validateMove(from, to, false)) {
 
             // 4. אם המהלך תקין - רושמים אותו ב-Arbiter
             realTimeArbiter.registerMove(gameState, from, to, false);
