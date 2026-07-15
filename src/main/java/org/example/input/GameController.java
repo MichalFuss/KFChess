@@ -1,9 +1,6 @@
 package org.example.input;
 
-import org.example.models.Board;
-import org.example.models.Piece;
-import org.example.models.Position;
-import org.example.models.ActiveMove;
+import org.example.models.*;
 import org.example.engine.GameEngine;
 
 public class GameController {
@@ -80,5 +77,18 @@ public class GameController {
      */
     public void advanceTime(long millis) {
         gameEngine.advanceTime(millis);
+    }
+
+
+    public Position getSelectedPosition() {
+        return this.selectedPosition;
+    }
+
+    /**
+     * מייצר ומחזיר את ה-Snapshot העדכני ביותר עבור ה-UI.
+     * המתודה לוקחת את ה-selectedPosition המנוהל כאן ומעבירה אותו למנוע.
+     */
+    public GameSnapshot getLatestSnapshot() {
+        return gameEngine.createSnapshot(this.selectedPosition);
     }
 }

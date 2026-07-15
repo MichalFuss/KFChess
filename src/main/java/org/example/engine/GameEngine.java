@@ -158,4 +158,105 @@ public class GameEngine {
         }
         return null;
     }
+    /**
+     * מייצר תמונת מצב ויזואלית (GameSnapshot) לקריאה בלבד עבור רכיב הציור.
+     * מתקבל מיקום המשבצת המסומנת כעת ב-Controller כדי להציג את ה-Highlight הצהוב.
+     */
+    public GameSnapshot createSnapshot(Position selectedPosition) {
+        // נגדיר גודל משבצת זמני של 100 פיקסלים (תוכלי להתאים אותו בהמשך לגודל חלון הציור שלך)
+        int cellSize = 100;
+
+        java.util.List<PieceSnapshot> pieceSnapshots = new java.util.ArrayList<>();
+        Board board = gameState.getBoard();
+        long currentTime = gameState.getGameTimeMillis();
+
+        // 1. איסוף כל הכלים הנייחים (IDLE) מהלוח
+        for (int r = 0; r < board.getHeight(); r++) {
+            for (int c = 0; c < board.getWidth(); c++) {
+                Position pos = new Position(r, c);
+                Piece piece = board.getPiece(pos);
+
+                // אנחנו מציירים מכאן רק כלים שהם IDLE.
+                // כלים בתנועה יחושבו מיד בשלב הבא כדי למנוע כפילויות בציור!
+                if (piece != null && piece.getState() == Piece.State.IDLE) {
+                    double pixelX = c * cellSize;
+                    double pixelY = r * cellSize;
+
+                    pieceSnapshots.add(new PieceSnapshot(
+                            piece.getId(),
+                            piece.getKind(),
+                            piece.getColor(),
+                            piece.getState(),
+                            pixelX,
+                            pixelY
+                    ));
+                }
+            }
+        }
+
+        // 2. חישוב מיקומים דינמיים עבור כלים שבתנועה (Active Moves)
+        for (ActiveMove move : gameState.getActiveMoves()) {
+            Piece piece = move.getPiece();
+
+            // שחזור ה-duration המקורי של המהלך (בדיוק לפי הלוגיקה של ה-Arbiter שלך)
+            long duration;
+            if (move.isJump()) {
+                duration = 1000; // קבוע של שנייה אחת לקפיצה
+            } else {
+                int distance = Math.max(
+                        Math.abs(move.getTo().getRow() - move.getFrom().getRow()),
+                        Math.abs(move.getTo().getCol() - move.getFrom().getCol())
+                );
+                duration = distance * 1000; // שנייה אחת לכל משבצת מרחק
+            }
+
+            // חישוב אחוז התקדמות האנימציה (נע בין 0.0 ל-1.0)
+            long startTime = move.getArrivalTimeMillis() - duration;
+            long elapsed = currentTime - startTime;
+            double progress = (double) elapsed / duration;
+            if (progress > 1.0) progress = 1.0;
+            if (progress < 0.0) progress = 0.0;
+
+            // נקודות ההתחלה והסוף בפיקסלים
+            double startX = move.getFrom().getCol() * cellSize;
+            double startY = move.getFrom().getRow() * cellSize;
+            double endX = move.getTo().getCol() * cellSize;
+            double endY = move.getTo().getRow() * cellSize;
+
+            double currentX;
+            double currentY;
+
+            if (move.isJump()) {
+                // אנימציית קפיצה במקום: ה-X נשאר קבוע, ה-Y מייצר קשת הולכת וחוזרת
+                currentX = startX;
+                double jumpHeight = cellSize * 0.5; // הכלי יקפוץ לגובה של חצי משבצת
+                double arc = 4 * progress * (1 - progress); // פרבולה שמגיעה לשיא ב-0.5
+                currentY = startY - (jumpHeight * arc); // מינוס כי קואורדינטת ה-Y במסך עולה כלפי מעלה
+            } else {
+                // אנימציית תנועה רגילה: קו ישר (ליניארי) מנקודת המוצא ליעד
+                currentX = startX + (endX - startX) * progress;
+                currentY = startY + (endY - startY) * progress;
+            }
+
+            // הוספת הכלי שבאוויר לרשימת הציור
+            pieceSnapshots.add(new PieceSnapshot(
+                    piece.getId(),
+                    piece.getKind(),
+                    piece.getColor(),
+                    piece.getState(),
+                    currentX,
+                    currentY
+            ));
+        }
+
+        // 3. אריזת הכל לתוך ה-GameSnapshot הכולל והחזרתו
+        return new GameSnapshot(
+                board.getWidth(),
+                board.getHeight(),
+                pieceSnapshots,
+                selectedPosition,
+                gameState.isGameOver(),
+                currentTime
+        );
+    }
 }

@@ -8,6 +8,9 @@ import org.example.models.Board;
 import org.example.models.GameState;
 import org.example.realtime.RealTimeArbiter;
 import org.example.io.BoardParser; // ייבוא ה-Parser שכתבת
+import org.example.ui.GameWindow;
+
+import javax.swing.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -38,7 +41,7 @@ public class Main {
             // שימוש ב-Parser שכתבת כדי לבנות את הלוח הדינמי
             board = BoardParser.parse(boardLines);
 
-          //  BoardMapper.setBoardDimensions(board.getWidth(), board.getHeight());    // -----------------------------------------------------------------
+            //  BoardMapper.setBoardDimensions(board.getWidth(), board.getHeight());    // -----------------------------------------------------------------
 
 
         } catch (IllegalArgumentException e) {
@@ -55,16 +58,27 @@ public class Main {
         GameController gameController = new GameController(board, gameEngine);
 
         CommandParser commandParser = new CommandParser(gameController, gameEngine);
-        // 3. לולאה לקריאת פקודות המשך
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine().trim();
-            if (line.equals("exit")) {
-                break;
-            }
-            // העברת השורה ל-Parser
-            commandParser.parseAndExecute(line);
-        }
 
-        scanner.close();
+
+        //CommandParser commandParser = new CommandParser(gameController, gameEngine);
+
+        // --- הוספת שורת האתחול של הממשק הגרפי ---
+        SwingUtilities.invokeLater(() -> new GameWindow(gameState, gameController));
+
+        // 3. לולאה לקריאת פקודות המשך (נשארת כפי שהיא)
+        while (scanner.hasNextLine()) {
+
+            // 3. לולאה לקריאת פקודות המשך
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine().trim();
+                if (line.equals("exit")) {
+                    break;
+                }
+                // העברת השורה ל-Parser
+                commandParser.parseAndExecute(line);
+            }
+
+            scanner.close();
+        }
     }
 }
