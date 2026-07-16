@@ -11,16 +11,9 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        // 1. קליטת שמות השחקנים מהקלט בקונסול
-        Scanner scanner = new Scanner(System.in);
 
-        System.out.print("Enter White Player name [Default: Musti Shusti]: ");
-        String whiteInput = scanner.nextLine().trim();
-        String whitePlayerName = whiteInput.isEmpty() ? "Musti Shusti" : whiteInput;
-
-        System.out.print("Enter Black Player name [Default: Chicko Miko]: ");
-        String blackInput = scanner.nextLine().trim();
-        String blackPlayerName = blackInput.isEmpty() ? "Chicko Miko" : blackInput;
+        String whitePlayerName = "White" ;
+        String blackPlayerName = "Black";
 
         // 2. הרצת הממשק הגרפי (GUI)
         SwingUtilities.invokeLater(() -> {
@@ -33,7 +26,7 @@ public class Main {
             gameState.setPlayerNames(whitePlayerName, blackPlayerName);
 
             // אתחול רכיבי הלוגיקה והזמן האמיתי
-            RealTimeArbiter arbiter = new RealTimeArbiter();
+            RealTimeArbiter arbiter = new RealTimeArbiter(1000,1000);
             GameEngine gameEngine = new GameEngine(gameState, arbiter);
             GameController gameController = new GameController(board, gameEngine);
 

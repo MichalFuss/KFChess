@@ -46,7 +46,7 @@ public class GameEngine {
         if (piece.getState() == Piece.State.MOVING || piece.getState() == Piece.State.JUMPING) {
             return false;
         }
-        //קפיצה במקום
+        // קפיצה במקום
         if (isJump && from.equals(to)) {
             return true;
         }
@@ -119,6 +119,7 @@ public class GameEngine {
             gameState.setGameOver(true);
         }
     }
+
     /**
      * מפיק Snapshot ויזואלי ומדויק של הלוח הנוכחי ומדפיס אותו לקונסול.
      * מתאים בדיוק לפורמט הנדרש על ידי פלטפורמת ה-VPL / הבודק האוטומטי.
@@ -138,9 +139,11 @@ public class GameEngine {
                 gameState.isGameOver()
         );
     }
+
     public GameState getGameState() {
         return this.gameState;
     }
+
     public boolean isPieceMovingFrom(Position pos) {
         for (ActiveMove move : gameState.getActiveMoves()) {
             if (move.getFrom().equals(pos)) {
@@ -149,6 +152,7 @@ public class GameEngine {
         }
         return false;
     }
+
     public ActiveMove findThreateningMove(Position pos, Piece.Color friendlyColor) {
         for (ActiveMove move : gameState.getActiveMoves()) {
             // אם המהלך מיועד להגיע למשבצת שלנו והוא שייך לצבע הנגדי (אויב)
@@ -158,28 +162,29 @@ public class GameEngine {
         }
         return null;
     }
+
     /**
      * מייצר תמונת מצב ויזואלית (GameSnapshot) לקריאה בלבד עבור רכיב הציור.
      * מתקבל מיקום המשבצת המסומנת כעת ב-Controller כדי להציג את ה-Highlight הצהוב.
      */
     public GameSnapshot createSnapshot(Position selectedPosition) {
-        // נגדיר גודל משבצת זמני של 100 פיקסלים (תוכלי להתאים אותו בהמשך לגודל חלון הציור שלך)
         int cellSize = 100;
 
         java.util.List<PieceSnapshot> pieceSnapshots = new java.util.ArrayList<>();
         Board board = gameState.getBoard();
         long currentTime = gameState.getGameTimeMillis();
 
-        // 1. איסוף כל הכלים הנייחים (IDLE) מהלוח
+        // 1. איסוף כל הכלים הנייחים מהלוח (IDLE, SHORT_REST, LONG_REST)
         for (int r = 0; r < board.getHeight(); r++) {
             for (int c = 0; c < board.getWidth(); c++) {
                 Position pos = new Position(r, c);
                 Piece piece = board.getPiece(pos);
 
-                // אנחנו מציירים מכאן רק כלים שהם IDLE.
-                // כלים בתנועה יחושבו מיד בשלב הבא כדי למנוע כפילויות בציור!
-                // התיקון: מאפשרים לצייר גם כלים שנמצאים בטעינה (COOLDOWN) על המשבצת שלהם
-                if (piece != null && (piece.getState() == Piece.State.IDLE || piece.getState() == Piece.State.COOLDOWN)) {
+                // אנחנו מציירים מכאן רק כלים שהם סטטיים על הלוח.
+                // התיקון המעודכן: מאפשרים לצייר כלים ב-IDLE וכן כלים בשני סוגי המנוחה (SHORT_REST, LONG_REST)
+                if (piece != null && (piece.getState() == Piece.State.IDLE
+                        || piece.getState() == Piece.State.SHORT_REST
+                        || piece.getState() == Piece.State.LONG_REST)) {
                     double pixelX = c * cellSize;
                     double pixelY = r * cellSize;
 
@@ -200,7 +205,7 @@ public class GameEngine {
         for (ActiveMove move : gameState.getActiveMoves()) {
             Piece piece = move.getPiece();
 
-            // שחזור ה-duration המקורי של המהלך (בדיוק לפי הלוגיקה של ה-Arbiter שלך)
+            // שחזור ה-duration המקורי של המהלך
             long duration;
             if (move.isJump()) {
                 duration = 1000; // קבוע של שנייה אחת לקפיצה
@@ -229,19 +234,18 @@ public class GameEngine {
             double currentY;
 
             if (move.isJump()) {
-                // אנימציית קפיצה במקום: ה-X נשאר קבוע, ה-Y מייצר קשת הולכת וחוזרת
+                // אנימציית קפיצה במקום
                 currentX = startX;
-                double jumpHeight = cellSize * 0.5; // הכלי יקפוץ לגובה של חצי משבצת
-                double arc = 4 * progress * (1 - progress); // פרבולה שמגיעה לשיא ב-0.5
-                currentY = startY - (jumpHeight * arc); // מינוס כי קואורדינטת ה-Y במסך עולה כלפי מעלה
+                double jumpHeight = cellSize * 0.5;
+                double arc = 4 * progress * (1 - progress);
+                currentY = startY - (jumpHeight * arc);
             } else {
-                // אנימציית תנועה רגילה: קו ישר (ליניארי) מנקודת המוצא ליעד
+                // אנימציית תנועה רגילה
                 currentX = startX + (endX - startX) * progress;
                 currentY = startY + (endY - startY) * progress;
             }
 
             // הוספת הכלי שבאוויר לרשימת הציור
-            // בתוך מתודת בניית ה-Snapshots ב-GameEngine
             pieceSnapshots.add(new PieceSnapshot(
                     piece.getId(),
                     piece.getKind(),
@@ -249,7 +253,7 @@ public class GameEngine {
                     piece.getState(),
                     currentX,
                     currentY,
-                    piece.getCooldownEndTime() // העברת זמן סיום ה-Cooldown
+                    piece.getCooldownEndTime()
             ));
         }
 

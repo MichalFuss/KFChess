@@ -16,20 +16,24 @@ public class BoardPanel extends JPanel {
     private final Map<String, List<Img>> animationCache = new HashMap<>();
 
     public static final int CELL_SIZE = 100; // גודל משבצת בפיקסלים
-    private static final long FRAME_DURATION_MS = 150; // מהירות האנימציה (150ms לכל פריים)
+    private static final long FRAME_DURATION_MS = 150; // מהירות האנימציה (150ms לכל פრიים)
 
     // המשתנה שמחזיק את תמונת המצב העדכנית מה-Engine
     private GameSnapshot currentSnapshot;
 
-    public BoardPanel() {
+    public BoardPanel(){
         // הגדרת גודל דיפולטיבי ראשוני של 8x8
-        setPreferredSize(new Dimension(8 * CELL_SIZE, 8 * CELL_SIZE));
+        this(8,8);
+    }
+
+    public BoardPanel(int a, int b) {
+        setPreferredSize(new Dimension(a * CELL_SIZE, b * CELL_SIZE));
 
         // 1. טעינת תמונת הלוח מתוך ה-resources (בהנחת לוח סטנדרטי)
         try {
             this.boardImg = new Img();
             this.boardImg.read("src/main/resources/board.png",
-                    new Dimension(8 * CELL_SIZE, 8 * CELL_SIZE),
+                    new Dimension(a * CELL_SIZE, b * CELL_SIZE),
                     false, null);
         } catch (Exception e) {
             this.boardImg = null; // אם חסר קובץ, נשתמש בלוח הגיבוי הדיגיטלי
@@ -58,7 +62,7 @@ public class BoardPanel extends JPanel {
     }
 
     /**
-     * טוען מראש את כל קבצי האנימציות של כל הכלים לזיכרון (שוחזר מאתמול)
+     * טוען מראש את כל קבצי האנימציות של כל הכלים לזיכרון
      */
     private void preloadAllAnimations() {
         String[] pieces = {
@@ -83,7 +87,7 @@ public class BoardPanel extends JPanel {
     }
 
     /**
-     * טוען קבצי תמונות ממוספרים ומטפל במבנה התיקיות (שוחזר מאתמול)
+     * טוען קבצי תמונות ממוספרים ומטפל במבנה התיקיות
      */
     private List<Img> loadFrames(String pieceFolder, String stateFolder) {
         List<Img> frames = new ArrayList<>();
@@ -136,25 +140,23 @@ public class BoardPanel extends JPanel {
             g2d.drawRect(selected.getCol() * CELL_SIZE, selected.getRow() * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         }
 
-        // 3. ציור הכלים והשפעות ה-Cooldown
+        // 3. ציור הכלים והשפעות ה-Cooldown/Rest
         for (PieceSnapshot p : currentSnapshot.getPieces()) {
             int x = (int) p.getX();
             int y = (int) p.getY();
 
-            // א. ציור רקע צהוב דועך (רק אם הכלי ב-COOLDOWN)
-            // הרקע מצויר *לפני* הכלי, כך שהכלי יופיע מעליו ולא יתכסה
-            if (p.getState() == Piece.State.COOLDOWN) {
+            // א. ציור רקע צהוב דועך (משופר: בודק אם הכלי באחד ממצבי המנוחה)
+            if (p.getState() == Piece.State.SHORT_REST || p.getState() == Piece.State.LONG_REST) {
                 long remaining = p.getCooldownEndTime() - currentSnapshot.getGameTimeMillis();
                 if (remaining > 0) {
                     // חישוב שקיפות (Alpha) שדועכת בצורה חלקה ככל שהזמן עובר
-                    // הגבלנו את ה-Alpha המקסימלי ל-0.5f כדי שהרקע לא יהיה בוהק מדי
                     float alpha = Math.max(0.0f, Math.min(0.5f, (float) remaining / 3000.0f));
                     g2d.setColor(new Color(1.0f, 1.0f, 0.0f, alpha));
                     g2d.fillRect(x, y, CELL_SIZE, CELL_SIZE);
                 }
             }
 
-            // ב. ציור הכלי - קוד זה רץ תמיד ומצייר את הכלי באטימות מלאה מעל הרקע הצהוב
+            // ב. ציור הכלי - מצייר את הכלי באטימות מלאה מעל הרקע הצהוב
             Img pieceImg = getAnimationImg(p);
             if (pieceImg != null && pieceImg.get() != null) {
                 g2d.drawImage(pieceImg.get(), x, y, null);
@@ -162,8 +164,8 @@ public class BoardPanel extends JPanel {
                 drawFallbackPiece(g2d, p, x, y);
             }
 
-            // ג. ציור טקסט הטיימר מעל הכלי
-            if (p.getState() == Piece.State.COOLDOWN) {
+            // ג. ציור טקסט הטיימר מעל הכלי (משופר: מותאם למצבי המנוחה החדשים)
+            if (p.getState() == Piece.State.SHORT_REST || p.getState() == Piece.State.LONG_REST) {
                 long timeLeft = p.getCooldownEndTime() - currentSnapshot.getGameTimeMillis();
                 if (timeLeft > 0) {
                     // הוספת צל כהה קטן מאחורי הטקסט הלבן כדי לשמור על קריאות מעל הרקע הצהוב
@@ -176,16 +178,12 @@ public class BoardPanel extends JPanel {
             }
         }
     }
-    /**
-     * פונקציית העזר לבחירת הפריים הנכון מה-Cache
-     */
+
     /**
      * פונקציית העזר לבחירת הפריים הנכון מה-Cache
      */
     private Img getAnimationImg(PieceSnapshot piece) {
         String key = getPieceCacheKey(piece.getKind(), piece.getColor());
-
-        // מעבירים כעת גם את ה-State וגם את ה-Kind כדי לקבל את תיקיית המנוחה הנכונה
         String stateFolder = getStateFolderName(piece.getState(), piece.getKind());
 
         List<Img> frames = animationCache.get(key + "_" + stateFolder);
@@ -196,7 +194,7 @@ public class BoardPanel extends JPanel {
 
         if (frames == null || frames.isEmpty()) return null;
 
-        // הנפשה ברצף לפי הזמן הכללי של המשחק:
+        // הנפשה ברצף לפי הזמן הכללי של המשחק
         long gameTime = currentSnapshot.getGameTimeMillis();
         int frameIndex = (int) ((gameTime / FRAME_DURATION_MS) % frames.size());
         return frames.get(frameIndex);
@@ -220,10 +218,7 @@ public class BoardPanel extends JPanel {
     }
 
     /**
-     * פונקציית מיפוי התיקיות
-     */
-    /**
-     * פונקציית מיפוי התיקיות - מותאמת כעת לסוג הכלי עבור מצבי צינון
+     * פונקציית מיפוי התיקיות המעודכנת - עכשיו יש מיפוי ישיר, חד וחלק!
      */
     private String getStateFolderName(Piece.State state, Piece.Kind kind) {
         if (state == null) return "idle";
@@ -232,19 +227,12 @@ public class BoardPanel extends JPanel {
                 return "move";
             case JUMPING:
                 return "jump";
+            case SHORT_REST:
+                return "short_rest";
+            case LONG_REST:
+                return "long_rest";
             case IDLE:
-                return "idle";
-            case COOLDOWN:
-                // חלוקת סוג הצינון לפי סוג הכלי לטעינת האנימציה המתאימה
-                if (kind == Piece.Kind.PAWN || kind == Piece.Kind.KNIGHT || kind == Piece.Kind.BISHOP) {
-                    return "short_rest";
-                } else {
-                    return "long_rest";
-                }
             default:
-                String name = state.name().toLowerCase();
-                if (name.contains("short")) return "short_rest";
-                if (name.contains("long")) return "long_rest";
                 return "idle";
         }
     }

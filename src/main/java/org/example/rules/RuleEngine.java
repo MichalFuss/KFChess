@@ -27,8 +27,9 @@ public class RuleEngine {
         // 1. הגנה בסיסית: האם זזנו לאותה משבצת?
         if (from.equals(to)) return false;
 
-        if (piece.getState() == Piece.State.COOLDOWN) {
-            return false; // הכלי ב-Cooldown ולא יכול לזוז
+        // מניעת תנועה של כלי שנמצא במנוחה קצרה או ארוכה
+        if (piece.getState() == Piece.State.SHORT_REST || piece.getState() == Piece.State.LONG_REST) {
+            return false;
         }
         // 2. הגנה בסיסית: האם משבצת היעד בתוך גבולות הלוח?
         if (!board.isWithinBounds(to)) return false;

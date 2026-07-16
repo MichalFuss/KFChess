@@ -7,8 +7,7 @@ public class GameState {
     private long gameTimeMillis;
     private boolean isGameOver;
     private Position selectedPosition;
-    private final List<ActiveMove> activeMoves; // מחליף את מה ששמרת ב-MovementManager
-    // --- שדות חדשים בתוך GameState ---
+    private final List<ActiveMove> activeMoves;
     private int whiteScore = 0;
     private int blackScore = 0;
     private final List<MoveLogEntry> whiteMoves = new java.util.ArrayList<>();
@@ -16,6 +15,13 @@ public class GameState {
     private  String whitePlayerName ;
     private  String blackPlayerName ;
 
+    public GameState(Board board) {
+        this.board = board;
+        this.gameTimeMillis = 0;
+        this.isGameOver = false;
+        this.selectedPosition = null;
+        this.activeMoves = new ArrayList<>();
+    }
 
 
     // --- גטרים וסטרים לעדכון הנתונים ---
@@ -41,13 +47,7 @@ public class GameState {
     public void addWhiteMove(MoveLogEntry entry) { this.whiteMoves.add(entry); }
     public void addBlackMove(MoveLogEntry entry) { this.blackMoves.add(entry); }
 
-    public GameState(Board board) {
-        this.board = board;
-        this.gameTimeMillis = 0;
-        this.isGameOver = false;
-        this.selectedPosition = null;
-        this.activeMoves = new ArrayList<>();
-    }
+
 
     // Getters and Setters עבור הסטייט
     public Board getBoard() { return board; }

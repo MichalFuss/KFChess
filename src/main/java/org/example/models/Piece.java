@@ -36,10 +36,10 @@ public class Piece {
         }
     }
 
-    // מצב הכלי - יעזור לנו מאוד בהחלפת הלוגיקה של MovementManager
-    public enum State { IDLE, MOVING, JUMPING, CAPTURED, COOLDOWN }
+    // שינוי מצבי הכלי - הסרנו את COOLDOWN והוספנו SHORT_REST ו-LONG_REST
+    public enum State { IDLE, MOVING, JUMPING, CAPTURED, SHORT_REST, LONG_REST }
 
-    private final String id; // זיהוי ייחודי, למשל: "wK_1" או UUID
+    private final String id; // זיהוי ייחודי
     private final Color color;
     private final Kind kind;
     private Position cell; // המיקום הנוכחי
@@ -64,19 +64,13 @@ public class Piece {
     public State getState() { return state; }
     public void setState(State state) { this.state = state; }
 
-    // בתוך Piece.java
     private long cooldownEndTime = 0;
 
-    public void setCooldown(long durationMillis, long currentTime) {
-        this.state = State.COOLDOWN;
+    // עדכון המתודה לקבלת מצב המנוחה הספציפי (SHORT_REST או LONG_REST)
+    public void setCooldown(long durationMillis, long currentTime, State restState) {
+        this.state = restState;
         this.cooldownEndTime = currentTime + durationMillis;
     }
 
     public long getCooldownEndTime() { return cooldownEndTime; }
-
-    @Override
-    public String toString() {
-        // This will now work correctly!
-        return "" + color.getSymbol() + kind.getSymbol();
-    }
 }

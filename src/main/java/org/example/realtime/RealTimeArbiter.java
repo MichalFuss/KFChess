@@ -6,8 +6,16 @@ import java.util.Iterator;
 import java.util.List;
 
 public class RealTimeArbiter {
-    private static final long MOVE_DURATION_PER_SQUARE = 1000;
-    private static final long JUMP_DURATION = 1000;
+    private static  long MOVE_DURATION_PER_SQUARE ;
+    private static  long JUMP_DURATION ;
+
+    public RealTimeArbiter (){
+        this(1000,1000);
+    }
+    public RealTimeArbiter(long moveDurationPerSquare, long jumpDuration) {
+        MOVE_DURATION_PER_SQUARE = moveDurationPerSquare;
+        JUMP_DURATION = jumpDuration;
+    }
 
     public void registerMove(GameState gameState, Position from, Position to, boolean isJump) {
         Board board = gameState.getBoard();
@@ -62,7 +70,8 @@ public class RealTimeArbiter {
             for (int c = 0; c < board.getWidth(); c++) {
                 Piece p = board.getPiece(new Position(r, c));
                 // אם הכלי במצב COOLDOWN והזמן עבר - החזר אותו ל-IDLE
-                if (p != null && p.getState() == Piece.State.COOLDOWN) {
+                // שחרור כלים ממנוחה קצרה או ארוכה בחזרה למצב IDLE
+                if (p != null && (p.getState() == Piece.State.SHORT_REST || p.getState() == Piece.State.LONG_REST)) {
                     if (currentTime2 >= p.getCooldownEndTime()) {
                         p.setState(Piece.State.IDLE);
                     }
