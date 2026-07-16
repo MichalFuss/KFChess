@@ -178,7 +178,8 @@ public class GameEngine {
 
                 // אנחנו מציירים מכאן רק כלים שהם IDLE.
                 // כלים בתנועה יחושבו מיד בשלב הבא כדי למנוע כפילויות בציור!
-                if (piece != null && piece.getState() == Piece.State.IDLE) {
+                // התיקון: מאפשרים לצייר גם כלים שנמצאים בטעינה (COOLDOWN) על המשבצת שלהם
+                if (piece != null && (piece.getState() == Piece.State.IDLE || piece.getState() == Piece.State.COOLDOWN)) {
                     double pixelX = c * cellSize;
                     double pixelY = r * cellSize;
 
@@ -188,7 +189,8 @@ public class GameEngine {
                             piece.getColor(),
                             piece.getState(),
                             pixelX,
-                            pixelY
+                            pixelY,
+                            piece.getCooldownEndTime()
                     ));
                 }
             }
@@ -239,13 +241,15 @@ public class GameEngine {
             }
 
             // הוספת הכלי שבאוויר לרשימת הציור
+            // בתוך מתודת בניית ה-Snapshots ב-GameEngine
             pieceSnapshots.add(new PieceSnapshot(
                     piece.getId(),
                     piece.getKind(),
                     piece.getColor(),
                     piece.getState(),
                     currentX,
-                    currentY
+                    currentY,
+                    piece.getCooldownEndTime() // העברת זמן סיום ה-Cooldown
             ));
         }
 

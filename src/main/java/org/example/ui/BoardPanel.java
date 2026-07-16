@@ -115,51 +115,78 @@ public class BoardPanel extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-
-        // הגנה: אם המשחק רק נפתח ועוד לא נשלח ה-Snapshot הראשון, לא נצייר כלום
         if (currentSnapshot == null) return;
 
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // 1. ציור רקע הלוח (החזרת הציור בפועל מאתמול)
+        // 1. ציור רקע הלוח
         if (boardImg != null && boardImg.get() != null) {
             g2d.drawImage(boardImg.get(), 0, 0, null);
         } else {
             drawFallbackGrid(g2d, currentSnapshot.getBoardWidth(), currentSnapshot.getBoardHeight());
         }
 
-        // 2. סימון משבצת נבחרת (הריבוע הצהוב)
+        // 2. סימון משבצת נבחרת
         Position selected = currentSnapshot.getSelectedPosition();
         if (selected != null) {
-            g2d.setColor(new Color(255, 255, 0, 80)); // צהוב חצי שקוף
+            g2d.setColor(new Color(255, 255, 0, 80));
             g2d.fillRect(selected.getCol() * CELL_SIZE, selected.getRow() * CELL_SIZE, CELL_SIZE, CELL_SIZE);
             g2d.setColor(new Color(255, 255, 0, 200));
             g2d.drawRect(selected.getCol() * CELL_SIZE, selected.getRow() * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         }
 
-        // 3. ציור הכלים מתוך ה-Snapshot (חישובי המיקום מגיעים מוכנים מה-Engine!)
-        for (PieceSnapshot pieceSnapshot : currentSnapshot.getPieces()) {
-            Img pieceImg = getAnimationImg(pieceSnapshot);
+        // 3. ציור הכלים והשפעות ה-Cooldown
+        for (PieceSnapshot p : currentSnapshot.getPieces()) {
+            int x = (int) p.getX();
+            int y = (int) p.getY();
 
-            int pixelX = (int) pieceSnapshot.getX();
-            int pixelY = (int) pieceSnapshot.getY();
+            // א. ציור רקע צהוב דועך (רק אם הכלי ב-COOLDOWN)
+            // הרקע מצויר *לפני* הכלי, כך שהכלי יופיע מעליו ולא יתכסה
+            if (p.getState() == Piece.State.COOLDOWN) {
+                long remaining = p.getCooldownEndTime() - currentSnapshot.getGameTimeMillis();
+                if (remaining > 0) {
+                    // חישוב שקיפות (Alpha) שדועכת בצורה חלקה ככל שהזמן עובר
+                    // הגבלנו את ה-Alpha המקסימלי ל-0.5f כדי שהרקע לא יהיה בוהק מדי
+                    float alpha = Math.max(0.0f, Math.min(0.5f, (float) remaining / 3000.0f));
+                    g2d.setColor(new Color(1.0f, 1.0f, 0.0f, alpha));
+                    g2d.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                }
+            }
 
+            // ב. ציור הכלי - קוד זה רץ תמיד ומצייר את הכלי באטימות מלאה מעל הרקע הצהוב
+            Img pieceImg = getAnimationImg(p);
             if (pieceImg != null && pieceImg.get() != null) {
-                g2d.drawImage(pieceImg.get(), pixelX, pixelY, null);
+                g2d.drawImage(pieceImg.get(), x, y, null);
             } else {
-                // מנגנון גיבוי (Fallback): ציור עיגול עם טקסט במידה ואין תמונה זמינה בתיקייה
-                drawFallbackPiece(g2d, pieceSnapshot, pixelX, pixelY);
+                drawFallbackPiece(g2d, p, x, y);
+            }
+
+            // ג. ציור טקסט הטיימר מעל הכלי
+            if (p.getState() == Piece.State.COOLDOWN) {
+                long timeLeft = p.getCooldownEndTime() - currentSnapshot.getGameTimeMillis();
+                if (timeLeft > 0) {
+                    // הוספת צל כהה קטן מאחורי הטקסט הלבן כדי לשמור על קריאות מעל הרקע הצהוב
+                    g2d.setColor(new Color(0, 0, 0, 150));
+                    g2d.drawString(String.format("%.1fs", timeLeft / 1000.0), x + 6, y + 21);
+
+                    g2d.setColor(Color.WHITE);
+                    g2d.drawString(String.format("%.1fs", timeLeft / 1000.0), x + 5, y + 20);
+                }
             }
         }
     }
-
+    /**
+     * פונקציית העזר לבחירת הפריים הנכון מה-Cache
+     */
     /**
      * פונקציית העזר לבחירת הפריים הנכון מה-Cache
      */
     private Img getAnimationImg(PieceSnapshot piece) {
         String key = getPieceCacheKey(piece.getKind(), piece.getColor());
-        String stateFolder = getStateFolderName(piece.getState());
+
+        // מעבירים כעת גם את ה-State וגם את ה-Kind כדי לקבל את תיקיית המנוחה הנכונה
+        String stateFolder = getStateFolderName(piece.getState(), piece.getKind());
 
         List<Img> frames = animationCache.get(key + "_" + stateFolder);
         if (frames == null || frames.isEmpty()) {
@@ -169,7 +196,7 @@ public class BoardPanel extends JPanel {
 
         if (frames == null || frames.isEmpty()) return null;
 
-        // הסרנו את החסימה של IDLE! כעת כולם יונפשו ברצף לפי הזמן הכללי של המשחק:
+        // הנפשה ברצף לפי הזמן הכללי של המשחק:
         long gameTime = currentSnapshot.getGameTimeMillis();
         int frameIndex = (int) ((gameTime / FRAME_DURATION_MS) % frames.size());
         return frames.get(frameIndex);
@@ -195,12 +222,25 @@ public class BoardPanel extends JPanel {
     /**
      * פונקציית מיפוי התיקיות
      */
-    private String getStateFolderName(Piece.State state) {
+    /**
+     * פונקציית מיפוי התיקיות - מותאמת כעת לסוג הכלי עבור מצבי צינון
+     */
+    private String getStateFolderName(Piece.State state, Piece.Kind kind) {
         if (state == null) return "idle";
         switch (state) {
-            case MOVING: return "move";
-            case JUMPING: return "jump";
-            case IDLE: return "idle";
+            case MOVING:
+                return "move";
+            case JUMPING:
+                return "jump";
+            case IDLE:
+                return "idle";
+            case COOLDOWN:
+                // חלוקת סוג הצינון לפי סוג הכלי לטעינת האנימציה המתאימה
+                if (kind == Piece.Kind.PAWN || kind == Piece.Kind.KNIGHT || kind == Piece.Kind.BISHOP) {
+                    return "short_rest";
+                } else {
+                    return "long_rest";
+                }
             default:
                 String name = state.name().toLowerCase();
                 if (name.contains("short")) return "short_rest";

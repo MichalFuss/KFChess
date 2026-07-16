@@ -37,7 +37,7 @@ public class Piece {
     }
 
     // מצב הכלי - יעזור לנו מאוד בהחלפת הלוגיקה של MovementManager
-    public enum State { IDLE, MOVING, JUMPING, CAPTURED }
+    public enum State { IDLE, MOVING, JUMPING, CAPTURED, COOLDOWN }
 
     private final String id; // זיהוי ייחודי, למשל: "wK_1" או UUID
     private final Color color;
@@ -63,6 +63,16 @@ public class Piece {
 
     public State getState() { return state; }
     public void setState(State state) { this.state = state; }
+
+    // בתוך Piece.java
+    private long cooldownEndTime = 0;
+
+    public void setCooldown(long durationMillis, long currentTime) {
+        this.state = State.COOLDOWN;
+        this.cooldownEndTime = currentTime + durationMillis;
+    }
+
+    public long getCooldownEndTime() { return cooldownEndTime; }
 
     @Override
     public String toString() {

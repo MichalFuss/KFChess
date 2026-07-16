@@ -3,12 +3,15 @@ package org.example.ui;
 import org.example.input.BoardMouseListener;
 import org.example.input.GameController;
 import org.example.models.GameState;
-import org.example.models.GameSnapshot; // ייבוא של ה-Snapshot החדש
+import org.example.models.GameSnapshot;
 
 import javax.swing.*;
+import java.awt.*;
 
 public class GameWindow extends JFrame {
     private final BoardPanel boardPanel;
+    private final PlayerLogPanel blackLogPanel;
+    private final PlayerLogPanel whiteLogPanel;
 
     public GameWindow(GameState gameState, GameController gameController) {
         // הגדרת כותרת לחלון המשחק
@@ -17,18 +20,29 @@ public class GameWindow extends JFrame {
         // הגדרה שהחלון ייסגר לחלוטין ויסיים את פעולת התוכנית בעת לחיצה על ה-X
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // מונע מהמשתמש לשנות את גודל החלון ידנית
+        // הגדרת מנהל פריסה (Layout) מסוג BorderLayout עם מרווחים של 10 פיקסלים בין הרכיבים
+        setLayout(new BorderLayout(10, 10));
+
+        // מונע מהמשתמש לשנות את גודל החלון ידנית כדי לשמור על יחס הציור
         setResizable(false);
 
-        // 1. יצירת פאנל הלוח (בארכיטקטורה החדשה הוא משתמש בבנאי הדיפולטיבי ללא gameState)
+        // 1. יצירת פאנל הלוח
         this.boardPanel = new BoardPanel();
-        add(boardPanel);
 
-        // 2. חיבור מאזין העכבר לפאנל הלוח לקליטת קלטים מהשחקן
+        // 2. יצירת פאנלי הרישום והניקוד לשני השחקנים (שליפת השמות ישירות מה-gameState)
+        this.blackLogPanel = new PlayerLogPanel(gameState.getBlackPlayerName());
+        this.whiteLogPanel = new PlayerLogPanel(gameState.getWhitePlayerName());
+
+        // 3. מיקום הרכיבים על המסך (בדיוק כמו בצילום המסך ששלחת)
+        add(blackLogPanel, BorderLayout.WEST);  // פאנל שחור בצד שמאל
+        add(boardPanel, BorderLayout.CENTER);   // לוח המשחק במרכז
+        add(whiteLogPanel, BorderLayout.EAST);  // פאנל לבן בצד ימין
+
+        // 4. חיבור מאזין העכבר לפאנל הלוח לקליטת קלטים מהשחקן
         BoardMouseListener mouseListener = new BoardMouseListener(gameController);
         boardPanel.addMouseListener(mouseListener);
 
-        // מתאים את גודל החלון החיצוני בדיוק לגודל הפאנל הפנימי
+        // מתאים את גודל החלון החיצוני בדיוק לגודל הכולל של כל הרכיבים בפנים
         pack();
 
         // מרכז את החלון בדיוק באמצע המסך של המשתמש
@@ -37,24 +51,27 @@ public class GameWindow extends JFrame {
         // מציג את החלון על המסך
         setVisible(true);
 
-        // 3. שעון המשחק הראשי (Game Loop) - מעודכן לעבודה עם Snapshots
+        // 5. שעון המשחק הראשי (Game Loop)
         Timer gameTimer = new Timer(20, e -> {
             if (!gameState.isGameOver()) {
                 // א. קידום הזמן הלוגי במנוע ב-20 מילישניות
                 gameController.advanceTime(20);
 
-                // ב. שליפת ה-Snapshot העדכני ביותר מהבקר או מהמנוע
-                // (הערה: ודא שיש לך מתודה כזו ב-gameController או ב-gameEngine שמחזירה GameSnapshot)
+                // ב. שליפת ה-Snapshot העדכני ביותר מהבקר
                 GameSnapshot snapshot = gameController.getLatestSnapshot();
 
-                // ג. עדכון הלוח ב-Snapshot החדש (מתודה זו מעדכנת את המצב וקוראת ל-repaint בעצמה!)
+                // ג. עדכון הלוח ב-Snapshot החדש (שמפעיל repaint פנימי)
                 if (snapshot != null) {
                     boardPanel.updateSnapshot(snapshot);
                 }
+
+                // ד. עדכון פאנלי המהלכים והניקוד של שני השחקנים בזמן אמת!
+                blackLogPanel.updateData(gameState.getBlackScore(), gameState.getBlackMoves());
+                whiteLogPanel.updateData(gameState.getWhiteScore(), gameState.getWhiteMoves());
             }
         });
 
-        // ד. הפעלה חיונית של שעון המשחק!
+        // ה. הפעלה של שעון המשחק
         gameTimer.start();
     }
 }

@@ -1,84 +1,71 @@
 package org.example;
 
 import org.example.engine.GameEngine;
-import org.example.input.BoardMapper;
-import org.example.io.CommandParser;
 import org.example.input.GameController;
-import org.example.models.Board;
-import org.example.models.GameState;
+import org.example.models.*;
 import org.example.realtime.RealTimeArbiter;
-import org.example.io.BoardParser; // ייבוא ה-Parser שכתבת
 import org.example.ui.GameWindow;
 
 import javax.swing.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
+        // 1. קליטת שמות השחקנים מהקלט בקונסול
         Scanner scanner = new Scanner(System.in);
 
-        // 1. קריאת ופענוח הלוח הדינמי מהקלט
-        List<String> boardLines = new ArrayList<>();
+        System.out.print("Enter White Player name [Default: Musti Shusti]: ");
+        String whiteInput = scanner.nextLine().trim();
+        String whitePlayerName = whiteInput.isEmpty() ? "Musti Shusti" : whiteInput;
 
-        if (scanner.hasNextLine()) {
-            String firstLine = scanner.nextLine().trim();
-            // אם ה-VPL מתחיל בכותרת "Board:"
-            if (firstLine.equalsIgnoreCase("Board:")) {
-                while (scanner.hasNextLine()) {
-                    String line = scanner.nextLine().trim();
-                    if (line.equalsIgnoreCase("Commands:") || line.isEmpty()) {
-                        break; // סיימנו לקרוא את הלוח, עוברים לפקודות
-                    }
-                    boardLines.add(line);
-                }
-            }
+        System.out.print("Enter Black Player name [Default: Chicko Miko]: ");
+        String blackInput = scanner.nextLine().trim();
+        String blackPlayerName = blackInput.isEmpty() ? "Chicko Miko" : blackInput;
+
+        // 2. הרצת הממשק הגרפי (GUI)
+        SwingUtilities.invokeLater(() -> {
+            // יצירת לוח סטנדרטי 8X8
+            Board board = new Board(8, 8);
+            setupStandardChessBoard(board);
+
+            // אתחול ה-GameState ועדכון השמות שהתקבלו
+            GameState gameState = new GameState(board);
+            gameState.setPlayerNames(whitePlayerName, blackPlayerName);
+
+            // אתחול רכיבי הלוגיקה והזמן האמיתי
+            RealTimeArbiter arbiter = new RealTimeArbiter();
+            GameEngine gameEngine = new GameEngine(gameState, arbiter);
+            GameController gameController = new GameController(board, gameEngine);
+
+            // פתיחת החלון
+            new GameWindow(gameState, gameController);
+        });
+    }
+
+    private static void setupStandardChessBoard(Board board) {
+        placeMajorRow(board, 0, Piece.Color.BLACK);
+        for (int col = 0; col < 8; col++) {
+            Position pos = new Position(1, col);
+            board.setPiece(pos, new Piece("bP_" + col, Piece.Color.BLACK, Piece.Kind.PAWN, pos));
         }
 
-        Board board;
-        try {
-            // שימוש ב-Parser שכתבת כדי לבנות את הלוח הדינמי
-            board = BoardParser.parse(boardLines);
-
-            //  BoardMapper.setBoardDimensions(board.getWidth(), board.getHeight());    // -----------------------------------------------------------------
-
-
-        } catch (IllegalArgumentException e) {
-            // אם ה-Parser זרק שגיאה (UNKNOWN_TOKEN או ROW_WIDTH_MISMATCH) - נדפיס אותה ונצא
-            System.out.println(e.getMessage());
-            scanner.close();
-            return;
+        for (int col = 0; col < 8; col++) {
+            Position pos = new Position(6, col);
+            board.setPiece(pos, new Piece("wP_" + col, Piece.Color.WHITE, Piece.Kind.PAWN, pos));
         }
+        placeMajorRow(board, 7, Piece.Color.WHITE);
+    }
 
-        // 2. אתחול הרכיבים עם הלוח האמיתי שפוענח
-        GameState gameState = new GameState(board);
-        RealTimeArbiter realTimeArbiter = new RealTimeArbiter();
-        GameEngine gameEngine = new GameEngine(gameState, realTimeArbiter);
-        GameController gameController = new GameController(board, gameEngine);
+    private static void placeMajorRow(Board board, int row, Piece.Color color) {
+        String prefix = (color == Piece.Color.WHITE) ? "w" : "b";
 
-        CommandParser commandParser = new CommandParser(gameController, gameEngine);
-
-
-        //CommandParser commandParser = new CommandParser(gameController, gameEngine);
-
-        // --- הוספת שורת האתחול של הממשק הגרפי ---
-        SwingUtilities.invokeLater(() -> new GameWindow(gameState, gameController));
-
-        // 3. לולאה לקריאת פקודות המשך (נשארת כפי שהיא)
-        while (scanner.hasNextLine()) {
-
-            // 3. לולאה לקריאת פקודות המשך
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine().trim();
-                if (line.equals("exit")) {
-                    break;
-                }
-                // העברת השורה ל-Parser
-                commandParser.parseAndExecute(line);
-            }
-
-            scanner.close();
-        }
+        board.setPiece(new Position(row, 0), new Piece(prefix + "R1", color, Piece.Kind.ROOK, new Position(row, 0)));
+        board.setPiece(new Position(row, 1), new Piece(prefix + "N1", color, Piece.Kind.KNIGHT, new Position(row, 1)));
+        board.setPiece(new Position(row, 2), new Piece(prefix + "B1", color, Piece.Kind.BISHOP, new Position(row, 2)));
+        board.setPiece(new Position(row, 3), new Piece(prefix + "Q", color, Piece.Kind.QUEEN, new Position(row, 3)));
+        board.setPiece(new Position(row, 4), new Piece(prefix + "K", color, Piece.Kind.KING, new Position(row, 4)));
+        board.setPiece(new Position(row, 5), new Piece(prefix + "B2", color, Piece.Kind.BISHOP, new Position(row, 5)));
+        board.setPiece(new Position(row, 6), new Piece(prefix + "N2", color, Piece.Kind.KNIGHT, new Position(row, 6)));
+        board.setPiece(new Position(row, 7), new Piece(prefix + "R2", color, Piece.Kind.ROOK, new Position(row, 7)));
     }
 }
