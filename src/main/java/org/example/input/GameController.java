@@ -14,6 +14,7 @@ public class GameController {
         this.selectedPosition = null;
     }
 
+
     public void handleClick(int x, int y) {
         if (gameEngine.getGameState().isGameOver()) return;
 
@@ -91,4 +92,7 @@ public class GameController {
     public GameSnapshot getLatestSnapshot() {
         return gameEngine.createSnapshot(this.selectedPosition);
     }
+
+
+
 }
