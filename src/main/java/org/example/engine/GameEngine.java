@@ -35,25 +35,25 @@ public class GameEngine {
      * מנגנון האצלת סמכויות מרכזי המאמת האם מהלך מבוקש הוא חוקי לחלוטין.
      * מואצל ישירות ל-RuleEngine שמפעיל את החוק הספציפי לכל כלי.
      */
-    public boolean validateMove(Position from, Position to, boolean isJump) {
-        if (gameState.isGameOver()) return false;
+    public MoveValidationResult validateMove(Position from, Position to, boolean isJump) {
+        if (gameState.isGameOver()) return MoveValidationResult.GAME_OVER;
 
         Board board = gameState.getBoard();
         Piece piece = board.getPiece(from);
 
-        if (piece == null) return false;
+        if (piece == null) return MoveValidationResult.NO_PIECE_AT_SOURCE;
 
         if (piece.getState() == Piece.State.MOVING || piece.getState() == Piece.State.JUMPING) {
-            return false;
+            return MoveValidationResult.PIECE_IN_MOTION;
         }
         // קפיצה במקום
         if (isJump && from.equals(to)) {
-            return true;
+            return MoveValidationResult.VALID;
         }
 
         // אם זה מהלך jump רגיל של פרש (לא במקום, אלא דילוג מעל כלים ליעד אחר)
         if (isJump && piece.getKind() != Piece.Kind.KNIGHT) {
-            return false;
+            return MoveValidationResult.INVALID_JUMP;
         }
 
         List<ActiveMove> activeMoves = gameState.getActiveMoves();
@@ -76,7 +76,8 @@ public class GameEngine {
         }
 
         // 3. קריאה ל-RuleEngine עם כל הפרמטרים שהוא דורש
-        if (this.validateMove(from, to, false)) {
+        MoveValidationResult result = this.validateMove(from, to, false);
+        if (result == MoveValidationResult.VALID) {
 
             // 4. אם המהלך תקין - רושמים אותו ב-Arbiter
             realTimeArbiter.registerMove(gameState, from, to, false);
@@ -99,7 +100,8 @@ public class GameEngine {
         // לצורך המימוש נניח שהיעד מחושב או שהכלי פשוט מבצע קפיצה טקטית למשבצת הנוכחית/סמוכה
         Position destination = new Position(targetPos.getRow(), targetPos.getCol());
 
-        if (validateMove(targetPos, destination, true)) {
+        MoveValidationResult result = validateMove(targetPos, destination, true);
+        if (result == MoveValidationResult.VALID) {
             realTimeArbiter.registerMove(gameState, targetPos, destination, true);
         }
     }

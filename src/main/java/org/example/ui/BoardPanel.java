@@ -307,6 +307,11 @@ public class BoardPanel extends JPanel implements EventListener {
                 y + (CELL_SIZE + textHeight) / 2 - 2
         );
     }
+
+    // בתוך BoardPanel.java
+    public boolean isGameOver() {
+        return this.isGameOver;
+    }
     @Override
     public void onEvent(GameEvent event) {
         if (event instanceof GameStatusEvent) {

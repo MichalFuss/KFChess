@@ -1,5 +1,6 @@
 package org.example.ui;
 
+import org.example.events.EventBus;
 import org.example.models.GameSnapshot;
 import org.example.models.Position;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,16 +12,27 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class BoardPanelTest {
-
     private BoardPanel boardPanel;
+    private EventBus eventBus; // הוספת משתנה ה-EventBus
 
     @BeforeEach
     void setUp() {
-        // מניעת שגיאות גרפיות בריצה בסביבות ללא מסך (כמו שרתי בנייה)
         System.setProperty("java.awt.headless", "true");
-        boardPanel = new BoardPanel(8, 8);
+        eventBus = new EventBus(); // יצירת מופע חדש לכל בדיקה
+        boardPanel = new BoardPanel(8, 8, eventBus); // הזרקת ה-EventBus
     }
 
+    @Test
+    void testGameOverState() {
+        // בדיקה שהפאנל מגיב נכון לאירוע סיום משחק
+        assertFalse(boardPanel.isGameOver(), "בתחילת המשחק ה-isGameOver צריך להיות false");
+
+        // שידור אירוע סיום
+        eventBus.publish(new org.example.events.GameStatusEvent(org.example.events.GameStatusEvent.Status.OVER));
+
+        // הערה: נצטרך להוסיף Getter ל-isGameOver ב-BoardPanel כדי לבדוק את זה
+        assertTrue(boardPanel.isGameOver(), "הפאנל צריך לעדכן את מצב ה-isGameOver ל-true בעקבות האירוע");
+    }
     @Test
     void testPreferredSizeCalculation() {
         // גודל התא מוגדר כ-100 פיקסלים בלוח
@@ -32,7 +44,7 @@ class BoardPanelTest {
 
     @Test
     void testDefaultConstructorSize() {
-        BoardPanel defaultPanel = new BoardPanel();
+        BoardPanel defaultPanel = new BoardPanel(eventBus);
         Dimension expectedSize = new Dimension(8 * BoardPanel.CELL_SIZE, 8 * BoardPanel.CELL_SIZE);
 
         assertEquals(expectedSize, defaultPanel.getPreferredSize(),

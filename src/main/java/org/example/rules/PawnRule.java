@@ -5,7 +5,7 @@ import java.util.List;
 
 public class PawnRule implements PieceRule {
     @Override
-    public boolean isValidMove(Position from, Position to, Piece piece, Board board, List<ActiveMove> activeMoves) {
+    public MoveValidationResult isValidMove(Position from, Position to, Piece piece, Board board, List<ActiveMove> activeMoves) {
         int deltaRow = to.getRow() - from.getRow();
         int deltaCol = to.getCol() - from.getCol();
         int absCol = Math.abs(deltaCol);
@@ -17,10 +17,12 @@ public class PawnRule implements PieceRule {
         // מקרה 1: תנועה ישר קדימה (ללא שינוי עמודה)
         if (deltaCol == 0) {
             // היעד חייב להיות ריק לחלוטין (סטטית ודינמית מטעם כל קבוצה)
-            if (targetPiece != null || isSquareOccupiedByAnyActiveMove(to, activeMoves)) return false;
+            if (targetPiece != null || isSquareOccupiedByAnyActiveMove(to, activeMoves)) {
+                return MoveValidationResult.BLOCKED_BY_PIECE;
+            }
 
             // צעד אחד קדימה
-            if (deltaRow == direction) return true;
+            if (deltaRow == direction) return MoveValidationResult.VALID;
 
             // צעד כפול קדימה
             if (deltaRow == 2 * direction) {
@@ -39,23 +41,27 @@ public class PawnRule implements PieceRule {
                 if (isStartingRow) {
                     // בדיקה שהמשבצת באמצע המסלול ריקה לחלוטין (סטטית ודינמית)
                     Position middlePos = new Position(from.getRow() + direction, from.getCol());
-                    return board.getPiece(middlePos) == null && !isSquareOccupiedByAnyActiveMove(middlePos, activeMoves);
+                    return (board.getPiece(middlePos) == null && !isSquareOccupiedByAnyActiveMove(middlePos, activeMoves))
+                            ? MoveValidationResult.VALID
+                            : MoveValidationResult.PATH_BLOCKED;
                 }
             }
-            return false;
+            return MoveValidationResult.INVALID_MOVE_PATTERN;
         }
 
         // מקרה 2: תפיסה באלכסון (בדיוק עמודה אחת הצידה וצעד אחד קדימה)
         if (absCol == 1 && deltaRow == direction) {
             // תפיסה סטטית של אויב על הלוח
             if (targetPiece != null && targetPiece.getColor() != piece.getColor()) {
-                return true;
+                return MoveValidationResult.VALID;
             }
             // תפיסה דינמית: האם יש מהלך פעיל של אויב שנוחת שם כרגע באוויר
-            return isSquareOccupiedByEnemyActiveMove(to, piece.getColor(), activeMoves);
+            return isSquareOccupiedByEnemyActiveMove(to, piece.getColor(), activeMoves)
+                    ? MoveValidationResult.VALID
+                    : MoveValidationResult.INVALID_MOVE_PATTERN;
         }
 
-        return false;
+        return MoveValidationResult.INVALID_MOVE_PATTERN;
     }
 
     // פונקציות עזר פנימיות לבדיקת מהלכים פעילים באוויר (Dynamic Collision)

@@ -9,6 +9,7 @@ import java.util.List;
 public interface PieceRule {
     /**
      * בודק האם תנועת הכלי מחוקית מבחינת צורת התנועה והחסימות על הלוח.
+     * @return MoveValidationResult עם ההתוצאה וההסבר
      */
-    boolean isValidMove(Position from, Position to, Piece piece, Board board, List<ActiveMove> activeMoves);
+    MoveValidationResult isValidMove(Position from, Position to, Piece piece, Board board, List<ActiveMove> activeMoves);
 }

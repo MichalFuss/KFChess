@@ -21,23 +21,23 @@ public class RuleEngine {
 
     /**
      * הפונקציה הראשית שתיקרא מתוך ה-GameController או ה-Engine.
-     * מחזירה true אם המהלך חוקי לחלוטין.
+     * מחזירה MoveValidationResult עם התוצאה וההסבר
      */
-    public boolean validateMove(Position from, Position to, Piece piece, Board board, List<ActiveMove> activeMoves) {
+    public MoveValidationResult validateMove(Position from, Position to, Piece piece, Board board, List<ActiveMove> activeMoves) {
         // 1. הגנה בסיסית: האם זזנו לאותה משבצת?
-        if (from.equals(to)) return false;
+        if (from.equals(to)) return MoveValidationResult.INVALID_SAME_SQUARE;
 
         // מניעת תנועה של כלי שנמצא במנוחה קצרה או ארוכה
         if (piece.getState() == Piece.State.SHORT_REST || piece.getState() == Piece.State.LONG_REST) {
-            return false;
+            return MoveValidationResult.PIECE_IN_REST;
         }
         // 2. הגנה בסיסית: האם משבצת היעד בתוך גבולות הלוח?
-        if (!board.isWithinBounds(to)) return false;
+        if (!board.isWithinBounds(to)) return MoveValidationResult.OUT_OF_BOUNDS;
         
-        if (piece == null) return false;
+        if (piece == null) return MoveValidationResult.NO_PIECE;
         // 3. שליפת החוק הספציפי של סוג הכלי והרצתו
         PieceRule rule = rules.get(piece.getKind());
-        if (rule == null) return false;
+        if (rule == null) return MoveValidationResult.INVALID_PIECE_KIND;
 
         return rule.isValidMove(from, to, piece, board, activeMoves);
     }
