@@ -30,7 +30,7 @@ public class GameWindow extends JFrame {
         setResizable(false);
 
         // 1. יצירת פאנל הלוח
-        this.boardPanel = new BoardPanel();
+        this.boardPanel = new BoardPanel(eventBus);
 
         // 2. יצירת פאנלי הרישום והניקוד לשני השחקנים (שליפת השמות ישירות מה-gameState)
         this.blackLogPanel = new PlayerLogPanel(gameState.getBlackPlayerName(), Piece.Color.BLACK, eventBus);

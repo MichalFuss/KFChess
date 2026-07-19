@@ -1,5 +1,9 @@
 package org.example.ui;
 
+import org.example.events.EventBus;
+import org.example.events.EventListener;
+import org.example.events.GameEvent;
+import org.example.events.GameStatusEvent;
 import org.example.models.*;
 import javax.swing.*;
 import java.awt.*;
@@ -9,7 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class BoardPanel extends JPanel {
+public class BoardPanel extends JPanel implements EventListener {
     private Img boardImg;
 
     // קובץ מטמון שיחזיק את כל פריימי האנימציה לכל כלי ולכל מצב
@@ -20,13 +24,18 @@ public class BoardPanel extends JPanel {
 
     // המשתנה שמחזיק את תמונת המצב העדכנית מה-Engine
     private GameSnapshot currentSnapshot;
+    private EventBus eventBus;
+    private boolean isGameOver = false;
 
-    public BoardPanel(){
+    public BoardPanel(EventBus eventBus) {
+
         // הגדרת גודל דיפולטיבי ראשוני של 8x8
-        this(8,8);
+        this(8,8,eventBus);
     }
 
-    public BoardPanel(int a, int b) {
+    public BoardPanel(int a, int b, EventBus eventBus) {
+        this.eventBus = eventBus;
+        eventBus.subscribe(this);
         setPreferredSize(new Dimension(a * CELL_SIZE, b * CELL_SIZE));
 
         // 1. טעינת תמונת הלוח מתוך ה-resources (בהנחת לוח סטנדרטי)
@@ -177,6 +186,19 @@ public class BoardPanel extends JPanel {
                 }
             }
         }
+        // ציור הודעת הסיום אם המשחק נגמר
+        if (isGameOver) {
+            g2d.setColor(new Color(0, 0, 0, 150)); // רקע כהה חצי שקוף
+            g2d.fillRect(0, 0, getWidth(), getHeight());
+
+            g2d.setColor(Color.WHITE);
+            g2d.setFont(new Font("Arial", Font.BOLD, 50));
+            String message = "Game Over";
+            FontMetrics fm = g2d.getFontMetrics();
+            int x = (getWidth() - fm.stringWidth(message)) / 2;
+            int y = getHeight() / 2;
+            g2d.drawString(message, x, y);
+        }
     }
 
     /**
@@ -284,5 +306,22 @@ public class BoardPanel extends JPanel {
                 x + (CELL_SIZE - textWidth) / 2,
                 y + (CELL_SIZE + textHeight) / 2 - 2
         );
+    }
+    @Override
+    public void onEvent(GameEvent event) {
+        if (event instanceof GameStatusEvent) {
+            GameStatusEvent statusEvent = (GameStatusEvent) event;
+            if (statusEvent.getStatus() == GameStatusEvent.Status.OVER) {
+                this.isGameOver = true;
+                this.repaint();
+            }
+        }
+    }
+    @Override
+    public void removeNotify() {
+        super.removeNotify();
+        if (this.eventBus != null) {
+            this.eventBus.unsubscribe(this);
+        }
     }
 }
