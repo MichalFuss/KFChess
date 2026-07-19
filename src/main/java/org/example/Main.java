@@ -1,6 +1,9 @@
 package org.example;
 
+import org.example.audio.SoundManager;
 import org.example.engine.GameEngine;
+import org.example.events.EventBus;
+import org.example.events.GameStatusEvent;
 import org.example.input.GameController;
 import org.example.models.*;
 import org.example.realtime.RealTimeArbiter;
@@ -15,23 +18,30 @@ public class Main {
         String whitePlayerName = "White" ;
         String blackPlayerName = "Black";
 
+        // 1. ניצור את ה-Bus המרכזי
+        EventBus eventBus = new EventBus();
+        SoundManager soundManager = new SoundManager(eventBus);
+
         // 2. הרצת הממשק הגרפי (GUI)
         SwingUtilities.invokeLater(() -> {
             // יצירת לוח סטנדרטי 8X8
             Board board = new Board(8, 8);
             setupStandardChessBoard(board);
 
+
             // אתחול ה-GameState ועדכון השמות שהתקבלו
             GameState gameState = new GameState(board);
             gameState.setPlayerNames(whitePlayerName, blackPlayerName);
 
-            // אתחול רכיבי הלוגיקה והזמן האמיתי
-            RealTimeArbiter arbiter = new RealTimeArbiter(1000,1000);
+
+// 2. נעביר אותו פנימה ללוגיקה כדי שתוכל *לשדר* אירועים
+            RealTimeArbiter arbiter = new RealTimeArbiter(1000, 1000, eventBus);
             GameEngine gameEngine = new GameEngine(gameState, arbiter);
             GameController gameController = new GameController(board, gameEngine);
 
-            // פתיחת החלון
-            new GameWindow(gameState, gameController);
+            // 3. נעביר אותו גם לממשק הגרפי כדי שיוכל *להאזין* לאירועים
+            new GameWindow(gameState, gameController, eventBus);
+            eventBus.publish(new GameStatusEvent(GameStatusEvent.Status.STARTED));
         });
     }
 

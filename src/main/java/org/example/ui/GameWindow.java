@@ -1,9 +1,11 @@
 package org.example.ui;
 
+import org.example.events.EventBus;
 import org.example.input.BoardMouseListener;
 import org.example.input.GameController;
 import org.example.models.GameState;
 import org.example.models.GameSnapshot;
+import org.example.models.Piece;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,8 +14,9 @@ public class GameWindow extends JFrame {
     private final BoardPanel boardPanel;
     private final PlayerLogPanel blackLogPanel;
     private final PlayerLogPanel whiteLogPanel;
+    private EventBus eventBus;
 
-    public GameWindow(GameState gameState, GameController gameController) {
+    public GameWindow(GameState gameState, GameController gameController,EventBus eventBus) {
         // הגדרת כותרת לחלון המשחק
         setTitle("KFChess - Real Time Chess");
 
@@ -30,8 +33,8 @@ public class GameWindow extends JFrame {
         this.boardPanel = new BoardPanel();
 
         // 2. יצירת פאנלי הרישום והניקוד לשני השחקנים (שליפת השמות ישירות מה-gameState)
-        this.blackLogPanel = new PlayerLogPanel(gameState.getBlackPlayerName());
-        this.whiteLogPanel = new PlayerLogPanel(gameState.getWhitePlayerName());
+        this.blackLogPanel = new PlayerLogPanel(gameState.getBlackPlayerName(), Piece.Color.BLACK, eventBus);
+        this.whiteLogPanel = new PlayerLogPanel(gameState.getWhitePlayerName(), Piece.Color.WHITE, eventBus);
 
         // 3. מיקום הרכיבים על המסך (בדיוק כמו בצילום המסך ששלחת)
         add(blackLogPanel, BorderLayout.WEST);  // פאנל שחור בצד שמאל
@@ -65,9 +68,7 @@ public class GameWindow extends JFrame {
                     boardPanel.updateSnapshot(snapshot);
                 }
 
-                // ד. עדכון פאנלי המהלכים והניקוד של שני השחקנים בזמן אמת!
-                blackLogPanel.updateData(gameState.getBlackScore(), gameState.getBlackMoves());
-                whiteLogPanel.updateData(gameState.getWhiteScore(), gameState.getWhiteMoves());
+
             }
         });
 

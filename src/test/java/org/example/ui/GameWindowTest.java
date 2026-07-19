@@ -1,5 +1,6 @@
 package org.example.ui;
 
+import org.example.events.EventBus;
 import org.example.input.GameController;
 import org.example.models.Board;
 import org.example.models.GameState;
@@ -15,6 +16,7 @@ class GameWindowTest {
 
     private GameState gameState;
     private GameController gameController;
+    private EventBus eventBus;
 
     @BeforeEach
     void setUp() {
@@ -34,12 +36,14 @@ class GameWindowTest {
 
         // 4. יצירת ה-GameController שלכם בצורה נקייה ללא Mock
         gameController = new GameController(board, null);
+
+        eventBus = new EventBus();
     }
 
     @Test
     void testGameWindowProperties() {
         // יצירת מופע של החלון
-        GameWindow window = new GameWindow(gameState, gameController);
+        GameWindow window = new GameWindow(gameState, gameController,eventBus);
 
         // בדיקה שהכותרת הוגדרה בדיוק לפי הדרישה
         assertEquals("KFChess - Real Time Chess", window.getTitle(),

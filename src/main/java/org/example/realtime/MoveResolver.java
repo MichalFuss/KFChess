@@ -1,5 +1,6 @@
 package org.example.realtime;
 
+import org.example.events.*;
 import org.example.models.*;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -9,7 +10,9 @@ public class MoveResolver {
 
     public static boolean resolveCompletedMoves(GameState gameState,
                                                 List<ActiveMove> completedNormalMoves,
-                                                List<ActiveMove> completedJumps) {
+                                                List<ActiveMove> completedJumps,
+                                                EventBus eventBus
+                                                ) {
 
         // 1. איחוד כל המהלכים לרשימה אחת
         List<ActiveMove> allMoves = new ArrayList<>(completedNormalMoves);
@@ -26,16 +29,19 @@ public class MoveResolver {
             // אם הכלי שנוחת כבר נאכל (למשל נחת עליו כלי אחר בזמן רגיל), הוא לא יכול לנחות
             if (move.getPiece().getState() == Piece.State.CAPTURED) continue;
 
-            if (executeLanding(board, move, gameState)) {
+            if (executeLanding(board, move, gameState, eventBus)) {
                 kingCaptured = true;
             }
         }
 
-        if (kingCaptured) gameState.setGameOver(true);
+        if (kingCaptured) {
+            gameState.setGameOver(true);
+            eventBus.publish(new GameStatusEvent(GameStatusEvent.Status.OVER));
+        }
         return kingCaptured;
     }
 
-    private static boolean executeLanding(Board board, ActiveMove move, GameState gameState) {
+    private static boolean executeLanding(Board board, ActiveMove move, GameState gameState,EventBus eventBus) {
         Piece piece = move.getPiece();
 
         // הגנה: כלי מת לא נוחת
@@ -60,8 +66,17 @@ public class MoveResolver {
                 targetPiece.setState(Piece.State.CAPTURED);
 
                 int val = getPieceValue(targetPiece.getKind());
-                if (piece.getColor() == Piece.Color.WHITE) gameState.addWhiteScore(val);
-                else gameState.addBlackScore(val);
+                if (piece.getColor() == Piece.Color.WHITE){
+                    gameState.addWhiteScore(val);
+                }
+                else {
+                    gameState.addBlackScore(val);
+                }
+                // פרסום אירוע עדכון ניקוד
+                eventBus.publish(new ScoreUpdatedEvent(gameState.getWhiteScore(), gameState.getBlackScore()));
+
+// 3. הוספת שידור אירוע סאונד לאכילה
+                eventBus.publish(new PlaySoundEvent("CAPTURE"));
             }
         }
 
@@ -88,6 +103,8 @@ public class MoveResolver {
                 MoveNotationFormatter.format(move, isCapture));
         if (piece.getColor() == Piece.Color.WHITE) gameState.addWhiteMove(log);
         else gameState.addBlackMove(log);
+
+        eventBus.publish(new MoveLoggedEvent(move.getPiece().getColor(), log));
 
         // הכתרה
         if (piece.getKind() == Piece.Kind.PAWN && isPromotionRow(move.getTo(), piece.getColor(), board)) {

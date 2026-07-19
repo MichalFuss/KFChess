@@ -1,5 +1,6 @@
 package org.example.realtime;
 
+import org.example.events.EventBus;
 import org.example.models.*;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -8,13 +9,15 @@ import java.util.List;
 public class RealTimeArbiter {
     private static  long MOVE_DURATION_PER_SQUARE ;
     private static  long JUMP_DURATION ;
+    private EventBus eventBus;
 
-    public RealTimeArbiter (){
-        this(1000,1000);
+    public RealTimeArbiter (EventBus eventBus){
+        this(1000,1000, eventBus);
     }
-    public RealTimeArbiter(long moveDurationPerSquare, long jumpDuration) {
+    public RealTimeArbiter(long moveDurationPerSquare, long jumpDuration, EventBus eventBus) {
         MOVE_DURATION_PER_SQUARE = moveDurationPerSquare;
         JUMP_DURATION = jumpDuration;
+        this.eventBus = eventBus;
     }
 
     public void registerMove(GameState gameState, Position from, Position to, boolean isJump) {
@@ -80,6 +83,6 @@ public class RealTimeArbiter {
         }
 
         // האצלת פתרון הלוגיקה, הנחיתה והאכילות למחלקה הייעודית
-        return MoveResolver.resolveCompletedMoves(gameState, completedNormalMoves, completedJumps);
+        return MoveResolver.resolveCompletedMoves(gameState, completedNormalMoves, completedJumps, eventBus);
     }
 }

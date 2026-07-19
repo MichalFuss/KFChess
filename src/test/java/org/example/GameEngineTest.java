@@ -1,6 +1,7 @@
 package org.example;
 
 import org.example.engine.GameEngine;
+import org.example.events.EventBus;
 import org.example.models.*;
 import org.example.realtime.RealTimeArbiter;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,13 +15,15 @@ class GameEngineTest {
     private GameState gameState;
     private RealTimeArbiter arbiter;
     private GameEngine engine;
+    private EventBus eventBus;
 
     @BeforeEach
     void setUp() {
         // אתחול לוח 8x8 סטנדרטי
         board = new Board(8, 8);
         gameState = new GameState(board);
-        arbiter = new RealTimeArbiter();
+        eventBus = new EventBus();
+        arbiter = new RealTimeArbiter(eventBus);
         engine = new GameEngine(gameState, arbiter);
     }
 

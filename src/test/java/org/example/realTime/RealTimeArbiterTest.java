@@ -1,5 +1,6 @@
 package org.example.realTime;
 
+import org.example.events.EventBus;
 import org.example.models.*;
 import org.example.realtime.RealTimeArbiter;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,10 +13,12 @@ public class RealTimeArbiterTest {
     private RealTimeArbiter arbiter;
     private GameState gameState;
     private Board board;
+    private EventBus eventBus;
 
     @BeforeEach
     void setUp() {
-        arbiter = new RealTimeArbiter();
+        eventBus = new EventBus();
+        arbiter = new RealTimeArbiter(eventBus);
         // יוצרים לוח בגודל סטנדרטי 8x8 לכל טסט
         board = new Board(8, 8);
         gameState = new GameState(board);

@@ -1,6 +1,7 @@
 package org.example;
 
 import org.example.engine.GameEngine;
+import org.example.events.EventBus;
 import org.example.input.GameController;
 import org.example.models.*;
 import org.example.realtime.RealTimeArbiter;
@@ -16,13 +17,15 @@ class GameControllerTest {
     private RealTimeArbiter arbiter;
     private GameEngine engine;
     private GameController gameController;
+    private EventBus event;
 
     @BeforeEach
     void setUp() {
         // אתחול לוח 8x8 סטנדרטי ורכיבי המשחק האמיתיים
         board = new Board(8, 8);
+        event = new EventBus();
         gameState = new GameState(board);
-        arbiter = new RealTimeArbiter();
+        arbiter = new RealTimeArbiter(event);
         engine = new GameEngine(gameState, arbiter);
 
         // הזרקת התלויות לבקר
