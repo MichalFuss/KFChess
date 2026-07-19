@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import org.example.events.DisconnectCountdownEvent;
 public class BoardPanel extends JPanel implements EventListener {
     private Img boardImg;
 
@@ -26,6 +26,7 @@ public class BoardPanel extends JPanel implements EventListener {
     private GameSnapshot currentSnapshot;
     private EventBus eventBus;
     private boolean isGameOver = false;
+    private int disconnectCountdown = 0; // המשתנה החדש לספירה לאחור
 
     public BoardPanel(EventBus eventBus) {
 
@@ -186,6 +187,14 @@ public class BoardPanel extends JPanel implements EventListener {
                 }
             }
         }
+        // --- התוספת החדשה: ציור הספירה לאחור ---
+        if (disconnectCountdown > 0 && !isGameOver) {
+            g2d.setColor(new Color(255, 0, 0, 150)); // רקע אדום חצי שקוף
+            g2d.fillRect(0, 0, getWidth(), 50); // פס עליון בולט
+            g2d.setColor(Color.WHITE);
+            g2d.setFont(new Font("Arial", Font.BOLD, 20));
+            g2d.drawString("Opponent Disconnected. Auto-resign in: " + disconnectCountdown + "s", 10, 35);
+        }
         // ציור הודעת הסיום אם המשחק נגמר
         if (isGameOver) {
             g2d.setColor(new Color(0, 0, 0, 150)); // רקע כהה חצי שקוף
@@ -320,6 +329,10 @@ public class BoardPanel extends JPanel implements EventListener {
                 this.isGameOver = true;
                 this.repaint();
             }
+        }
+        else if (event instanceof DisconnectCountdownEvent) {
+            this.disconnectCountdown = ((DisconnectCountdownEvent) event).getSecondsLeft();
+            this.repaint(); // דורש ציור מחדש כדי להציג את השניות המעודכנות
         }
     }
     @Override

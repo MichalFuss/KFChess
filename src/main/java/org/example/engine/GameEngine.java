@@ -66,23 +66,18 @@ public class GameEngine {
      * מטפל בבקשת מהלך רגיל (Click-to-Click).
      * אם המהלך עובר אימות בהצלחה, הוא מוזנק פיזית לאוויר.
      */
-    public void processMoveRequest(Position from, Position to) {
-        // 1. שליפת הכלי מהלוח (קריטי!)
+    // שינוי: הוספת Piece.Color playerColor לחתימה
+    public void processMoveRequest(Position from, Position to, Piece.Color playerColor) {
         Piece piece = gameState.getBoard().getPiece(from);
 
-        // 2. בדיקת תקינות בסיסית: האם יש כלי במקום ממנו מנסים לזוז?
-        if (piece == null) {
+        // שינוי: חסימה הרמטית - אם אין כלי או שהכלי לא שייך לשחקן שביקש את המהלך
+        if (piece == null || piece.getColor() != playerColor) {
             return;
         }
 
-        // 3. קריאה ל-RuleEngine עם כל הפרמטרים שהוא דורש
         MoveValidationResult result = this.validateMove(from, to, false);
         if (result == MoveValidationResult.VALID) {
-
-            // 4. אם המהלך תקין - רושמים אותו ב-Arbiter
             realTimeArbiter.registerMove(gameState, from, to, false);
-        } else {
-            // אם הגענו לכאן, ה-RuleEngine פסל את המהלך
         }
     }
 
@@ -90,14 +85,14 @@ public class GameEngine {
      * מטפל בבקשת קפיצה (Jump Command).
      * קפיצה היא מהלך טקטי מיידי לטווח קצר, בדרך כלל לצורך התחמקות או תפיסה מהירה.
      */
-    public void processJumpRequest(Position targetPos) {
+    // שינוי: הוספת Piece.Color playerColor לחתימה
+    public void processJumpRequest(Position targetPos, Piece.Color playerColor) {
         Board board = gameState.getBoard();
         Piece piece = board.getPiece(targetPos);
 
-        // בקשת קפיצה מופעלת על כלי קיים כדי להקפיץ אותו
-        if (piece == null) return;
+        // שינוי: חסימה הרמטית גם בקפיצות
+        if (piece == null || piece.getColor() != playerColor) return;
 
-        // לצורך המימוש נניח שהיעד מחושב או שהכלי פשוט מבצע קפיצה טקטית למשבצת הנוכחית/סמוכה
         Position destination = new Position(targetPos.getRow(), targetPos.getCol());
 
         MoveValidationResult result = validateMove(targetPos, destination, true);

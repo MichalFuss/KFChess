@@ -1,6 +1,9 @@
 package org.example.ui;
 
+import org.example.events.DisconnectCountdownEvent;
 import org.example.events.EventBus;
+import org.example.events.EventListener;
+import org.example.events.GameEvent;
 import org.example.input.BoardMouseListener;
 import org.example.input.GameController;
 import org.example.models.GameState;
@@ -14,9 +17,10 @@ public class GameWindow extends JFrame {
     private final BoardPanel boardPanel;
     private final PlayerLogPanel blackLogPanel;
     private final PlayerLogPanel whiteLogPanel;
+    private final Piece.Color windowColor; // המשתנה החדש שישמור את צבע החלון
     private EventBus eventBus;
 
-    public GameWindow(GameState gameState, GameController gameController,EventBus eventBus) {
+    public GameWindow(GameState gameState, GameController gameController,EventBus eventBus,Piece.Color windowColor) {
         // הגדרת כותרת לחלון המשחק
         setTitle("KFChess - Real Time Chess");
 
@@ -31,6 +35,7 @@ public class GameWindow extends JFrame {
 
         // 1. יצירת פאנל הלוח
         this.boardPanel = new BoardPanel(eventBus);
+        this.windowColor = windowColor;
 
         // 2. יצירת פאנלי הרישום והניקוד לשני השחקנים (שליפת השמות ישירות מה-gameState)
         this.blackLogPanel = new PlayerLogPanel(gameState.getBlackPlayerName(), Piece.Color.BLACK, eventBus);
@@ -42,7 +47,7 @@ public class GameWindow extends JFrame {
         add(whiteLogPanel, BorderLayout.EAST);  // פאנל לבן בצד ימין
 
         // 4. חיבור מאזין העכבר לפאנל הלוח לקליטת קלטים מהשחקן
-        BoardMouseListener mouseListener = new BoardMouseListener(gameController);
+        BoardMouseListener mouseListener = new BoardMouseListener(gameController, windowColor);
         boardPanel.addMouseListener(mouseListener);
 
         // מתאים את גודל החלון החיצוני בדיוק לגודל הכולל של כל הרכיבים בפנים
@@ -67,12 +72,32 @@ public class GameWindow extends JFrame {
                 if (snapshot != null) {
                     boardPanel.updateSnapshot(snapshot);
                 }
-
-
             }
         });
 
         // ה. הפעלה של שעון המשחק
         gameTimer.start();
+
+        // תיקון: הרשמה באמצעות ממשק ה-EventListener הקיים של המערכת שלך
+        eventBus.subscribe(new EventListener() {
+            @Override
+            public void onEvent(GameEvent event) {
+                // בדיקה האם האירוע שהתקבל הוא אכן מסוג ספירה לאחור של ניתוק
+                if (event instanceof DisconnectCountdownEvent) {
+                    DisconnectCountdownEvent countdownEvent = (DisconnectCountdownEvent) event;
+                    int secondsLeft = countdownEvent.getSecondsLeft(); // כעת המתודה קיימת ועובדת!
+
+                    SwingUtilities.invokeLater(() -> {
+                        if (secondsLeft > 0) {
+                            // עדכון כותרת החלון בזמן אמת
+                            setTitle("⚠️ אזהרה: היריב התנתק! ניצחון טכני בעוד " + secondsLeft + " שניות...");
+                        } else {
+                            // החזרת הכותרת המקורית כאשר הספירה מתאפסת/מבוטלת
+                            setTitle("KFChess - " + (windowColor == Piece.Color.WHITE ? gameState.getWhitePlayerName() : gameState.getBlackPlayerName()) + " (" + windowColor + " Player)");
+                        }
+                    });
+                }
+            }
+        });
     }
 }
