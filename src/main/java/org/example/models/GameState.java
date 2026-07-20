@@ -1,6 +1,7 @@
 package org.example.models;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class GameState {
     private final Board board;
@@ -20,7 +21,7 @@ public class GameState {
         this.gameTimeMillis = 0;
         this.isGameOver = false;
         this.selectedPosition = null;
-        this.activeMoves = new ArrayList<>();
+        this.activeMoves = new CopyOnWriteArrayList<>();
     }
 
 

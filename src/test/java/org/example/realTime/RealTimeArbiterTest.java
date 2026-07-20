@@ -147,4 +147,24 @@ public class RealTimeArbiterTest {
         // המצב לאחר קפיצה חייב להיות SHORT_REST (ולא COOLDOWN)
         assertEquals(Piece.State.SHORT_REST, knight.getState(), "הכלי צריך להיות במצב SHORT_REST לאחר קפיצה");
     }
+
+    @Test
+    void testRestStateExpiresAfterCooldown() {
+        Position from = new Position(2, 2);
+        Position to = new Position(3, 2);
+        Piece pawn = new Piece("wP_1", Piece.Color.WHITE, Piece.Kind.PAWN, from);
+        board.setPiece(from, pawn);
+
+        // רישום וסיום תנועה ראשונה
+        arbiter.registerMove(gameState, from, to, false);
+        arbiter.advanceSimulation(gameState, 1000); // מסדר את הגעת הכלי
+
+        assertEquals(Piece.State.LONG_REST, pawn.getState());
+
+        // קידום נוסף בזמן של זמן הצינון הנדרש
+        arbiter.advanceSimulation(gameState, 3000);
+
+        // המצב צריך לחזור ל-IDLE וניתן להניע אותו שוב
+        assertEquals(Piece.State.IDLE, pawn.getState(), "לאחר סיום הצינון הכלי חייב לחזור למצב IDLE");
+    }
 }

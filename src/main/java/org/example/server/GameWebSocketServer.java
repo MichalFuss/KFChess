@@ -58,6 +58,7 @@ public class GameWebSocketServer extends WebSocketServer {
                     eventBus.publish(new GameStatusEvent(GameStatusEvent.Status.OVER));
                     System.out.println("Player timed out. Auto-resign executed.");
                     // כאן אפשר לעדכן ה-ELO ב-DB למפסיד
+
                 }
             }
         }, 0, 1000); // הפעלה כל שנייה (1000ms)
@@ -126,9 +127,24 @@ public class GameWebSocketServer extends WebSocketServer {
     /**
      * ממיר כתיב אלגברי (כמו "e2") ל-Position בלוח הדו-ממדי
      */
+    /**
+     * ממיר כתיב אלגברי (כמו "e2") ל-Position בלוח הדו-ממדי
+     */
     private Position algebraicToPosition(String alg) {
-        int col = alg.charAt(0) - 'a';
-        int row = 8 - Character.getNumericValue(alg.charAt(1));
+        if (alg == null || alg.length() != 2) {
+            throw new IllegalArgumentException("Invalid position length");
+        }
+
+        char colChar = Character.toLowerCase(alg.charAt(0));
+        char rowChar = alg.charAt(1);
+
+        // וידוא שהאות בטווח 'a'-'h' והספרה בטווח '1'-'8'
+        if (colChar < 'a' || colChar > 'h' || rowChar < '1' || rowChar > '8') {
+            throw new IllegalArgumentException("Invalid algebraic position: " + alg);
+        }
+
+        int col = colChar - 'a';
+        int row = 8 - Character.getNumericValue(rowChar);
         return new Position(row, col);
     }
 }

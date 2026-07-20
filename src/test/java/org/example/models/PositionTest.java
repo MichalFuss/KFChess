@@ -1,8 +1,7 @@
-package org.example;
+package org.example.models;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-import org.example.models.Position;
 
 class PositionTest {
 

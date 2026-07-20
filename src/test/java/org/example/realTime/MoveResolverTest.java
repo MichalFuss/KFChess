@@ -170,4 +170,64 @@ public class MoveResolverTest {
         assertTrue(result);
         assertTrue(gameState.isGameOver());
     }
+
+    @Test
+    void testSimultaneousExactTimestampArrival() {
+        // שני כלים המגיעים לאותה משבצת בדיוק באותה מילי-שנייה
+        Position posA = new Position(1, 1);
+        Position posB = new Position(3, 1);
+        Position targetPos = new Position(2, 1);
+
+        Piece whiteRook = new Piece("wR_1", Piece.Color.WHITE, Piece.Kind.ROOK, posA);
+        Piece blackRook = new Piece("bR_1", Piece.Color.BLACK, Piece.Kind.ROOK, posB);
+
+        board.setPiece(posA, whiteRook);
+        board.setPiece(posB, blackRook);
+
+        ActiveMove moveA = new ActiveMove(posA, targetPos, whiteRook, 1000, false);
+        ActiveMove moveB = new ActiveMove(posB, targetPos, blackRook, 1000, false);
+
+        List<ActiveMove> completedMoves = new ArrayList<>();
+        completedMoves.add(moveA);
+        completedMoves.add(moveB);
+
+        assertDoesNotThrow(() ->
+                MoveResolver.resolveCompletedMoves(gameState, completedMoves, new ArrayList<>(), eventBus)
+        );
+
+        // בודקים שרק כלי אחד נשאר במשבצת והשני נלכד
+        Piece winner = board.getPiece(targetPos);
+        assertNotNull(winner);
+        assertTrue(whiteRook.getState() == Piece.State.CAPTURED || blackRook.getState() == Piece.State.CAPTURED);
+    }
+
+    @Test
+    void testMultipleCapturingInSameTick() {
+        Position pos1 = new Position(0, 0);
+        Position pos2 = new Position(1, 0);
+        Position pos3 = new Position(2, 0);
+
+        Piece whitePawn = new Piece("wP_1", Piece.Color.WHITE, Piece.Kind.PAWN, pos1);
+        Piece blackPawn = new Piece("bP_1", Piece.Color.BLACK, Piece.Kind.PAWN, pos2);
+        // שינוי: הכלי השני חייב להיות שחור כדי לאכול כלי לבן!
+        Piece blackRook = new Piece("bR_1", Piece.Color.BLACK, Piece.Kind.ROOK, pos3);
+
+        board.setPiece(pos1, whitePawn);
+        board.setPiece(pos2, blackPawn);
+        board.setPiece(pos3, blackRook);
+
+        ActiveMove move1 = new ActiveMove(pos1, pos2, whitePawn, 1000, false);
+        ActiveMove move2 = new ActiveMove(pos3, pos2, blackRook, 1050, false);
+
+        List<ActiveMove> completedMoves = new ArrayList<>();
+        completedMoves.add(move1);
+        completedMoves.add(move2);
+
+        MoveResolver.resolveCompletedMoves(gameState, completedMoves, new ArrayList<>(), eventBus);
+
+        // ה-blackRook שהגיע ב-1050 אוכל את ה-whitePawn ששרד ב-1000
+        assertEquals(blackRook, board.getPiece(pos2));
+        assertEquals(Piece.State.CAPTURED, blackPawn.getState());
+        assertEquals(Piece.State.CAPTURED, whitePawn.getState());
+    }
 }

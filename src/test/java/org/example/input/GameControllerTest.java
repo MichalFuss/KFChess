@@ -1,8 +1,7 @@
-package org.example;
+package org.example.input;
 
 import org.example.engine.GameEngine;
 import org.example.events.EventBus;
-import org.example.input.GameController;
 import org.example.models.*;
 import org.example.realtime.RealTimeArbiter;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +42,7 @@ class GameControllerTest {
         board.setPiece(from, pawn);
 
         // לחיצה על מיקום החייל: x=150 (עמודה 1), y=250 (שורה 2)
-        gameController.handleClick(150, 250);
+        gameController.handleClick(150, 250, Piece.Color.WHITE);
 
         // בדיקה: מוודאים שלא התחיל שום מהלך כי המשחק גמור
         assertTrue(gameState.getActiveMoves().isEmpty(), "אסור לבצע מהלכים כשהמשחק נגמר");
@@ -52,7 +51,7 @@ class GameControllerTest {
     @Test
     void handleClick_WhenOutOfBounds_DoesNothing() {
         // פעולה: לחיצה במיקום מחוץ לגבולות הלוח
-        gameController.handleClick(-100, -100);
+        gameController.handleClick(-100, -100, Piece.Color.WHITE);
 
         // בדיקה: מוודאים שלא נוצר שום מהלך פעיל
         assertTrue(gameState.getActiveMoves().isEmpty(), "לחיצה מחוץ לגבולות הלוח לא אמורה ליצור מהלכים");
@@ -68,10 +67,10 @@ class GameControllerTest {
         board.setPiece(from, pawn);
 
         // לחיצה ראשונה: בחירת הכלי במיקום (שורה 2, עמודה 1) -> פיקסלים: x=150, y=250
-        gameController.handleClick(150, 250);
+        gameController.handleClick(150, 250, Piece.Color.WHITE);
 
         // לחיצה שנייה: משבצת יעד ריקה (שורה 1, עמודה 1) -> פיקסלים: x=150, y=150
-        gameController.handleClick(150, 150);
+        gameController.handleClick(150, 150, Piece.Color.WHITE);
 
         // בדיקה: עכשיו המהלך חייב להיקלט בהצלחה ב-ActiveMoves!
         assertFalse(gameState.getActiveMoves().isEmpty(), "הלחיצה השנייה הייתה אמורה להניע את הכלי ולרשום ActiveMove");

@@ -7,8 +7,8 @@ import java.util.Iterator;
 import java.util.List;
 
 public class RealTimeArbiter {
-    private static  long MOVE_DURATION_PER_SQUARE ;
-    private static  long JUMP_DURATION ;
+    private final long MOVE_DURATION_PER_SQUARE ;
+    private final long JUMP_DURATION ;
     private EventBus eventBus;
 
     public RealTimeArbiter (EventBus eventBus){
@@ -39,7 +39,6 @@ public class RealTimeArbiter {
         ActiveMove activeMove = new ActiveMove(from, to, piece, arrivalTimeMillis, isJump);
         gameState.addActiveMove(activeMove);
     }
-
     public boolean advanceSimulation(GameState gameState, long millisDelta) {
         if (gameState.isGameOver()) return false;
         if (millisDelta <= 0) return false;
@@ -50,10 +49,8 @@ public class RealTimeArbiter {
         List<ActiveMove> completedNormalMoves = new ArrayList<>();
         List<ActiveMove> completedJumps = new ArrayList<>();
 
-        Iterator<ActiveMove> iterator = gameState.getActiveMoves().iterator();
-        while (iterator.hasNext()) {
-            ActiveMove move = iterator.next();
-
+        // החלפת האיטרטור בלולאת for-each נקייה ובטוחה
+        for (ActiveMove move : gameState.getActiveMoves()) {
             // המהלך הגיע ליעדו
             if (move.isComplete(currentTime)) {
                 if (move.isJump()) {
@@ -61,18 +58,18 @@ public class RealTimeArbiter {
                 } else {
                     completedNormalMoves.add(move);
                 }
-                iterator.remove(); // הסרה מרשימת הכלים שבאוויר
+                // הסרה ישירה מתוך הרשימה במקום דרך האיטרטור
+                gameState.getActiveMoves().remove(move);
             }
         }
-        // הוסף את הקוד הזה בתוך מתודת advanceSimulation, אחרי שאתה מטפל במהלכים שהסתיימו:
 
+        // טיפול במנוחת כלים (Cooldown)
         Board board = gameState.getBoard();
         long currentTime2 = gameState.getGameTimeMillis();
 
         for (int r = 0; r < board.getHeight(); r++) {
             for (int c = 0; c < board.getWidth(); c++) {
                 Piece p = board.getPiece(new Position(r, c));
-                // אם הכלי במצב COOLDOWN והזמן עבר - החזר אותו ל-IDLE
                 // שחרור כלים ממנוחה קצרה או ארוכה בחזרה למצב IDLE
                 if (p != null && (p.getState() == Piece.State.SHORT_REST || p.getState() == Piece.State.LONG_REST)) {
                     if (currentTime2 >= p.getCooldownEndTime()) {

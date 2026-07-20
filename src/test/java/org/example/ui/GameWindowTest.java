@@ -43,7 +43,7 @@ class GameWindowTest {
     @Test
     void testGameWindowProperties() {
         // יצירת מופע של החלון
-        GameWindow window = new GameWindow(gameState, gameController,eventBus);
+        GameWindow window = new GameWindow(gameState, gameController,eventBus, Piece.Color.WHITE);
 
         // בדיקה שהכותרת הוגדרה בדיוק לפי הדרישה
         assertEquals("KFChess - Real Time Chess", window.getTitle(),

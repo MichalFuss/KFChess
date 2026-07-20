@@ -1,6 +1,5 @@
-package org.example;
+package org.example.io;
 
-import org.example.io.BoardParser;
 import org.example.models.Board;
 import org.example.models.Piece;
 import org.example.models.Position;

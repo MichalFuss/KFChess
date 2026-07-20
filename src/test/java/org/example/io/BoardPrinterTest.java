@@ -1,4 +1,4 @@
-package org.example;
+package org.example.io;
 
 import org.example.models.Board;
 import org.example.models.Piece;
@@ -6,7 +6,7 @@ import org.example.models.Position;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.example.io.BoardPrinter;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 

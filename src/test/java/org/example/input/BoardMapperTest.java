@@ -1,6 +1,5 @@
-package org.example;
+package org.example.input;
 
-import org.example.input.BoardMapper;
 import org.example.models.Position;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;

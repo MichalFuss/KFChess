@@ -1,6 +1,5 @@
-package org.example;
+package org.example.engine;
 
-import org.example.engine.GameEngine;
 import org.example.events.EventBus;
 import org.example.models.*;
 import org.example.realtime.RealTimeArbiter;
@@ -38,7 +37,7 @@ class GameEngineTest {
         board.setPiece(from, pawn);
 
         // פעולה: בקשת מהלך
-        engine.processMoveRequest(from, to);
+        engine.processMoveRequest(from, to, Piece.Color.WHITE);
 
         // בדיקה: האם המהלך נכנס ל-ActiveMoves?
         assertFalse(gameState.getActiveMoves().isEmpty(), "המהלך היה אמור להירשם כ-ActiveMove");
@@ -50,7 +49,7 @@ class GameEngineTest {
         Position from = new Position(0, 0); // ריק
         Position to = new Position(0, 1);
 
-        engine.processMoveRequest(from, to);
+        engine.processMoveRequest(from, to, Piece.Color.WHITE);
 
         assertTrue(gameState.getActiveMoves().isEmpty(), "לא ניתן להזיז משבצת ריקה");
     }
@@ -64,7 +63,7 @@ class GameEngineTest {
         pawn.setState(Piece.State.MOVING); // מגדירים אותו כזז
         board.setPiece(from, pawn);
 
-        engine.processMoveRequest(from, to);
+        engine.processMoveRequest(from, to, Piece.Color.WHITE);
 
         assertTrue(gameState.getActiveMoves().isEmpty(), "אסור להתחיל תנועה לכלי שכבר זז");
     }
@@ -75,7 +74,7 @@ class GameEngineTest {
         Piece knight = new Piece("wN", Piece.Color.WHITE, Piece.Kind.KNIGHT, pos);
         board.setPiece(pos, knight);
 
-        engine.processJumpRequest(pos);
+        engine.processJumpRequest(pos, Piece.Color.WHITE);
 
         assertFalse(gameState.getActiveMoves().isEmpty(), "קפיצה הייתה אמורה להירשם");
         assertTrue(gameState.getActiveMoves().get(0).isJump(), "המהלך היה אמור להיות מסומן כקפיצה");
@@ -96,7 +95,7 @@ class GameEngineTest {
         Piece pawn = new Piece("wP", Piece.Color.WHITE, Piece.Kind.PAWN, from);
         board.setPiece(from, pawn);
 
-        engine.processMoveRequest(from, to);
+        engine.processMoveRequest(from, to, Piece.Color.WHITE);
 
         assertTrue(gameState.getActiveMoves().isEmpty(), "אסור לבצע מהלכים כשהמשחק נגמר");
     }

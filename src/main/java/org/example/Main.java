@@ -180,20 +180,17 @@ public class Main {
             System.err.println("Failed to start WebSocket server: " + e.getMessage());
         }
 
-        // הפעלת הממשק הגרפי (GUI) המקומי על המחשב המארח
         SwingUtilities.invokeLater(() -> {
 
-            // עדכון: הוספת Piece.Color.WHITE כפרמטר רביעי לבנאי
             GameWindow whiteWindow = new GameWindow(gameState, gameController, eventBus, Piece.Color.WHITE);
             whiteWindow.setTitle("KFChess - " + whiteUser.username + " (White Player)");
-            whiteWindow.setLocation(100, 100); // מיקום בצד שמאל של המסך
+            whiteWindow.setLocation(100, 100);
 
-            // עדכון: הוספת Piece.Color.BLACK כפרמטר רביעי לבנאי
+
             GameWindow blackWindow = new GameWindow(gameState, gameController, eventBus, Piece.Color.BLACK);
             blackWindow.setTitle("KFChess - " + blackUser.username + " (Black Player)");
-            blackWindow.setLocation(900, 100); // מיקום בצד ימין של המסך
+            blackWindow.setLocation(900, 100);
 
-            // התחלת המשחק (יעדכן את שני החלונות במקביל)
             eventBus.publish(new GameStatusEvent(GameStatusEvent.Status.STARTED));
         });
     }
