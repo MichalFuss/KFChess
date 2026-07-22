@@ -1,32 +1,47 @@
 package org.example.ui;
 
+import org.example.logging.LoggerService;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.function.Consumer;
 
 public class HomePanel extends JPanel {
 
-    // הגדרת האזור הוויזואלי של הכפתור: מיקום X, מיקום Y, רוחב, גובה
-    private final Rectangle playButtonArea = new Rectangle(300, 250, 200, 60);
+    // אזורי הכפתורים בתוך הפאנל
+    private final Rectangle playButtonArea = new Rectangle(200, 250, 180, 50);
+    private final Rectangle roomButtonArea = new Rectangle(420, 250, 180, 50);
 
-    // משתנה לשמירת מצב (האם אנחנו כרגע מחפשים משחק?) כדי לשנות את הטקסט
     private boolean isSearching = false;
 
-    public HomePanel(Runnable onPlayClicked) {
-        // הגדרת מאזין ללחיצות עכבר על הפאנל
+    private final LoggerService logger;
+    private final Consumer<String> onCreateRoom;
+    private final Consumer<String> onJoinRoom;
+
+    public HomePanel(Runnable onPlayClicked, Consumer<String> onCreateRoom, Consumer<String> onJoinRoom) {
+        this.logger = new LoggerService("client.log");
+        this.onCreateRoom = onCreateRoom;
+        this.onJoinRoom = onJoinRoom;
+
+        // הוספת מאזין ללחיצות עכבר
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                // בדיקה: האם הנקודה שבה לחצו נמצאת בתוך שטח המלבן שהגדרנו?
-                if (playButtonArea.contains(e.getPoint()) && !isSearching) {
-                    isSearching = true;
-                    repaint(); // ציור מחדש של הפאנל כדי לעדכן את הטקסט ל-"Searching..."
+                Point clickPoint = e.getPoint();
 
-                    // הפעלת הפעולה שהועברה מבחוץ (הוספה לתור ה-Matchmaking)
+                // 1. לחיצה על כפתור PLAY
+                if (playButtonArea.contains(clickPoint) && !isSearching) {
+                    isSearching = true;
+                    repaint();
                     if (onPlayClicked != null) {
                         onPlayClicked.run();
                     }
+                }
+                // 2. לחיצה על כפתור ROOM
+                else if (roomButtonArea.contains(clickPoint)) {
+                    onRoomButtonClicked();
                 }
             }
         });
@@ -37,35 +52,74 @@ public class HomePanel extends JPanel {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
 
-        // החלקת התצוגה (Anti-aliasing) כדי שהטקסט והצורות ייראו טוב
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // ציור רקע הפאנל
+        // ציור רקע
         g2d.setColor(new Color(40, 40, 40));
         g2d.fillRect(0, 0, getWidth(), getHeight());
 
-        // ציור אזור הכפתור (Play)
-        if (isSearching) {
-            g2d.setColor(new Color(150, 150, 150)); // צבע אפור אם כבר לחצו
-        } else {
-            g2d.setColor(new Color(70, 130, 180)); // צבע כחול לכפתור פעיל
-        }
-
-        // ציור המלבן המוגדר
+        // --- כפתור PLAY ---
+        g2d.setColor(isSearching ? new Color(150, 150, 150) : new Color(70, 130, 180));
         g2d.fillRoundRect(playButtonArea.x, playButtonArea.y, playButtonArea.width, playButtonArea.height, 15, 15);
 
-        // ציור הטקסט בתוך הכפתור
         g2d.setColor(Color.WHITE);
-        g2d.setFont(new Font("Arial", Font.BOLD, 24));
+        g2d.setFont(new Font("Arial", Font.BOLD, 22));
+        drawCenteredString(g2d, isSearching ? "Searching..." : "PLAY", playButtonArea);
 
-        String text = isSearching ? "Searching..." : "PLAY";
+        // --- כפתור ROOM ---
+        g2d.setColor(new Color(60, 179, 113)); // ירוק לכפתור החדר
+        g2d.fillRoundRect(roomButtonArea.x, roomButtonArea.y, roomButtonArea.width, roomButtonArea.height, 15, 15);
 
-        // חישוב מיקום הטקסט כדי שיהיה ממורכז בתוך אזור הכפתור
+        g2d.setColor(Color.WHITE);
+        drawCenteredString(g2d, "ROOM", roomButtonArea);
+    }
+
+    private void drawCenteredString(Graphics2D g2d, String text, Rectangle area) {
         FontMetrics fm = g2d.getFontMetrics();
-        int textWidth = fm.stringWidth(text);
-        int textX = playButtonArea.x + (playButtonArea.width - textWidth) / 2;
-        int textY = playButtonArea.y + ((playButtonArea.height - fm.getHeight()) / 2) + fm.getAscent();
+        int x = area.x + (area.width - fm.stringWidth(text)) / 2;
+        int y = area.y + ((area.height - fm.getHeight()) / 2) + fm.getAscent();
+        g2d.drawString(text, x, y);
+    }
 
-        g2d.drawString(text, textX, textY);
+    private void onRoomButtonClicked() {
+        JTextField roomInput = new JTextField(15);
+        JPanel panel = new JPanel(new GridLayout(0, 1, 5, 5));
+        panel.add(new JLabel("room name:"));
+        panel.add(roomInput);
+
+        String[] options = {"Create", "Join", "Cancel"};
+
+        int choice = JOptionPane.showOptionDialog(
+                this,
+                panel,
+                "Room",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                options,
+                options[0]
+        );
+
+        String roomName = roomInput.getText().trim();
+
+        if (choice == 0) { // Create
+            if (roomName.isEmpty()) {
+                roomName = "Room_" + (int) (Math.random() * 1000);
+            }
+            logger.log("INFO", "User created room: " + roomName);
+            if (onCreateRoom != null) {
+                onCreateRoom.accept(roomName);
+            }
+
+        } else if (choice == 1) { // Join
+            if (!roomName.isEmpty()) {
+                logger.log("INFO", "User joined room: " + roomName);
+                if (onJoinRoom != null) {
+                    onJoinRoom.accept(roomName);
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Please enter a valid room name.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 }

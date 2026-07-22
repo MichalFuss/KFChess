@@ -111,8 +111,14 @@ public class MoveResolver {
             board.setPiece(move.getTo(), new Piece(piece.getId() + "_Q", piece.getColor(), Piece.Kind.QUEEN, move.getTo()));
         }
 
-        // המשחק נעצר *רק* אם בוצעה אכילה של מלך! (זה מה שגרם למשחק לקפוא קודם)
-        return isCapture && targetPiece != null && targetPiece.getKind() == Piece.Kind.KING;
+
+        boolean isKingCapture = isCapture && targetPiece != null && targetPiece.getKind() == Piece.Kind.KING;
+        if (isKingCapture) {
+            Piece.Color winnerColor = piece.getColor(); // הצבע התוקף הוא המנצח
+            gameState.setGameOver(true);
+            eventBus.publish(new GameStatusEvent(GameStatusEvent.Status.OVER, winnerColor));
+        }
+        return isKingCapture;
     }
 
     private static boolean isPromotionRow(Position pos, Piece.Color color, Board board) {

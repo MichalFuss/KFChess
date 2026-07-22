@@ -86,6 +86,13 @@ public class PlayerLogPanel extends JPanel implements EventListener {
             }
         }
     }
+
+    public void updateName(String newName) {
+        if (nameLabel != null) {
+            nameLabel.setText("Name: " + newName);
+        }
+    }
+
     @Override
     public void removeNotify() {
         super.removeNotify();

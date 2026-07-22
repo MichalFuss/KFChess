@@ -6,20 +6,27 @@ import java.awt.event.MouseEvent;
 import javax.swing.SwingUtilities;
 
 public class BoardMouseListener extends MouseAdapter {
-    private final GameController gameController;
-    private final Piece.Color assignedColor; // זהות החלון הנוכחי
+    private final IGameController gameController;
+    private final Piece.Color assignedColor; // זהות החלון הנוכחי (WHITE / BLACK)
+    private final String roleName;            // WHITE, BLACK, או VIEWER
 
-    public BoardMouseListener(GameController gameController, Piece.Color assignedColor) {
+    public BoardMouseListener(IGameController gameController, Piece.Color assignedColor, String roleName) {
         this.gameController = gameController;
         this.assignedColor = assignedColor;
+        this.roleName = roleName;
     }
 
     @Override
     public void mousePressed(MouseEvent e) {
+        // אם המשתמש הוא צופה - חוסמים לחלוטין קלט משחק
+        if ("VIEWER".equalsIgnoreCase(roleName) || assignedColor == null) {
+            return;
+        }
+
         int x = e.getX();
         int y = e.getY();
 
-        // ה-UI לא בודק כלום! הוא רק מדווח על הלחיצה + מי לחץ
+        // ה-UI מדווח על הלחיצה + מי לחץ
         if (SwingUtilities.isLeftMouseButton(e)) {
             gameController.handleClick(x, y, assignedColor);
         }

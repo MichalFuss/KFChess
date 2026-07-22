@@ -32,13 +32,33 @@ public class GameState {
     public List<MoveLogEntry> getBlackMoves() { return blackMoves; }
     public String getWhitePlayerName() { return whitePlayerName; }
     public String getBlackPlayerName() { return blackPlayerName; }
+    private Piece.Color winnerColor;
 
+    public Piece.Color getWinnerColor() {
+        return winnerColor;
+    }
+
+    public void setWinnerColor(Piece.Color winnerColor) {
+        this.winnerColor = winnerColor;
+    }
     public void setPlayerNames(String white, String black) {
         if (white != null && !white.trim().isEmpty()) {
             this.whitePlayerName = white;
         }
         if (black != null && !black.trim().isEmpty()) {
             this.blackPlayerName = black;
+        }
+    }
+
+    public void setWhitePlayerName(String name) {
+        if (name != null && !name.trim().isEmpty()) {
+            this.whitePlayerName = name;
+        }
+    }
+
+    public void setBlackPlayerName(String name) {
+        if (name != null && !name.trim().isEmpty()) {
+            this.blackPlayerName = name;
         }
     }
 

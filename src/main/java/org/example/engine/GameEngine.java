@@ -46,11 +46,14 @@ public class GameEngine {
         if (piece.getState() == Piece.State.MOVING || piece.getState() == Piece.State.JUMPING) {
             return MoveValidationResult.PIECE_IN_MOTION;
         }
+// הוספת הבדיקה כאן: חסימת כלי שנמצא במנוחה קצרה או ארוכה
+        if (piece.getState() == Piece.State.SHORT_REST || piece.getState() == Piece.State.LONG_REST) {
+            return MoveValidationResult.PIECE_IN_REST;
+        }
         // קפיצה במקום
         if (isJump && from.equals(to)) {
             return MoveValidationResult.VALID;
         }
-
         // אם זה מהלך jump רגיל של פרש (לא במקום, אלא דילוג מעל כלים ליעד אחר)
         if (isJump && piece.getKind() != Piece.Kind.KNIGHT) {
             return MoveValidationResult.INVALID_JUMP;
@@ -261,7 +264,11 @@ public class GameEngine {
                 pieceSnapshots,
                 selectedPosition,
                 gameState.isGameOver(),
-                currentTime
+                currentTime,
+                gameState.getWhiteScore(), // תוספת: משדרים את הניקוד
+                gameState.getBlackScore(),  // תוספת: משדרים את הניקוד
+                gameState.getWhiteMoves(),   // תוספת: משדרים את היסטוריית המהלכים של הלבן
+                gameState.getBlackMoves()    // תוספת: משדרים את היסטוריית המהלכים של השחור
         );
     }
 
